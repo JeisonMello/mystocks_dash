@@ -34,7 +34,7 @@ if ticker_input:
         stock.dividends.index = pd.to_datetime(stock.dividends.index)
         dividendos = stock.dividends.resample("Y").sum()
 
-        # 📌 Corrigir dados faltantes adicionando anos com 0
+        # 📌 Garantir que todos os anos tenham valores (mesmo que seja 0)
         ano_inicio = dividendos.index.min().year
         ano_atual = pd.Timestamp.today().year
         anos_completos = pd.Series(0, index=range(ano_inicio, ano_atual + 1))
@@ -44,17 +44,26 @@ if ticker_input:
         # 📌 Calcular o percentual de dividendos em relação ao preço médio do ano
         preco_medio_anual = dados["Close"].resample("Y").mean()
         preco_medio_anual.index = preco_medio_anual.index.year
+
+        # ✅ Preencher anos sem preços médios para evitar erro
+        preco_medio_anual = preco_medio_anual.reindex(dividendos.index, fill_value=1)
+
         dividend_yield = (dividendos / preco_medio_anual) * 100  # Em %
 
-        # Criar gráfico de dividendos com valores em %
-        fig_divid = px.bar(
-            x=dividendos.index,
-            y=dividend_yield,
-            text=dividend_yield.apply(lambda x: f"{x:.2f}%"),  # Exibir % nas barras
-            title=f"Dividend Yield Anual - {ticker}"
-        )
+        # ✅ Remover valores NaN e infinitos
+        dividend_yield = dividend_yield.replace([float("inf"), -float("inf")], 0).fillna(0)
 
-        st.plotly_chart(fig_divid)
+        # Criar gráfico de dividendos com valores em %
+        if not dividend_yield.empty:
+            fig_divid = px.bar(
+                x=dividend_yield.index,
+                y=dividend_yield,
+                text=dividend_yield.apply(lambda x: f"{x:.2f}%"),  # Exibir % nas barras
+                title=f"Dividend Yield Anual - {ticker}"
+            )
+            st.plotly_chart(fig_divid)
+        else:
+            st.warning(f"⚠️ Não há dividendos suficientes para exibir um gráfico válido para {ticker}.")
 
         # 📌 Calcular estatísticas adicionais
         ultimo_dividendo = dividendos.iloc[-1] if not dividendos.empty else 0
