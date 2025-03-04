@@ -34,19 +34,8 @@ if ticker_input:
         stock.dividends.index = pd.to_datetime(stock.dividends.index)
         dividendos = stock.dividends.resample("Y").sum()
 
-        # ✅ Verifica se há pelo menos um ano de dividendos antes de criar a série de anos completos
-        if not dividendos.empty:
-            # Criar um índice completo de anos desde o primeiro registro até o ano atual
-            ano_inicio = dividendos.index.min().year
-            ano_atual = pd.Timestamp.today().year
-            anos_completos = pd.Series(0, index=range(ano_inicio, ano_atual + 1))
-
-            # ✅ Mesclar os dados reais de dividendos com os anos completos
-            dividendos.index = dividendos.index.year  # Converte para anos inteiros
-            dividendos = anos_completos.add(dividendos, fill_value=0)
-
         # Criar gráfico de dividendos com valores visíveis
-        fig_divid = px.bar(x=dividendos.index, 
+        fig_divid = px.bar(x=dividendos.index.year, 
                            y=dividendos.values, 
                            text_auto=".2f",  # Exibir valores diretamente nas barras
                            title="Valor Pago em Dividendos Anualmente")
@@ -57,7 +46,7 @@ if ticker_input:
         ultimo_dividendo = dividendos.iloc[-1] if not dividendos.empty else 0
         media_5_anos = dividendos[-5:].mean() if len(dividendos) >= 5 else dividendos.mean()
         media_historica = dividendos.mean()
-        anos_sem_dividendo = dividendos[dividendos == 0].index.tolist()
+        anos_sem_dividendo = dividendos[dividendos == 0].index.year.tolist()
 
         # Exibir os dados abaixo do gráfico
         st.subheader("📊 Estatísticas de Dividendos")
@@ -66,9 +55,19 @@ if ticker_input:
         st.write(f"🔹 **Média de dividendos (todo o histórico):** {media_historica:.2f}")
         
         if anos_sem_dividendo:
-            anos_formatados = ', '.join(map(str, anos_sem_dividendo))
-            st.write(f"❌ **Anos sem pagamento de dividendos:** {anos_formatados}")
+            st.write(f"❌ **Anos sem pagamento de dividendos:** {', '.join(map(str, anos_sem_dividendo))}")
         else:
             st.write("✅ **A empresa pagou dividendos em todos os anos disponíveis.**")
     else:
         st.warning("⚠️ Nenhuma informação de dividendos encontrada para esta ação.")
+
+    # 📌 Adicionar tabela com histórico de dividendos desde a abertura de capital
+    st.subheader("📅 Histórico de Dividendos desde a Abertura de Capital")
+    
+    # Dados de exemplo (substitua pelos dados reais)
+    dados_dividendos = {
+        "Ano": [2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016],
+        "Valor Pago por Ação (R$)": [0.50, 0.45, 0.40, 0.35, 0.30, 0.25, 0.20, 0.15, 0.10, 0.05]
+    }
+    df_dividendos = pd.DataFrame(dados_dividendos)
+    st.write(df_dividendos)
