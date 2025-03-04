@@ -9,9 +9,17 @@ st.title("📈 Dashboard de Ações")
 # Entrada do usuário
 ticker_input = st.text_input("Digite o código da ação (ex: AAPL, TSLA, PETR4.SA):")
 
-# Botões de período para histórico de preços
-periodos = {"1D": "1d", "6M": "6mo", "YTD": "ytd", "1Y": "1y", "5Y": "5y", "Máx": "max"}
-periodo_escolhido = st.selectbox("Selecione o período:", list(periodos.keys()))
+# Botões de período para histórico de preços (agora no estilo do Google Finance)
+periodos = {"1D": "1d", "5D": "5d", "1M": "1mo", "6M": "6mo", "YTD": "ytd", "1Y": "1y", "5Y": "5y", "Max": "max"}
+
+# Criando os botões de período como texto clicável
+col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
+botoes = [col1, col2, col3, col4, col5, col6, col7, col8]
+periodo_selecionado = "6M"  # Padrão inicial
+
+for i, (label, value) in enumerate(periodos.items()):
+    if botoes[i].button(label, key=f"btn_{label}"):
+        periodo_selecionado = label  # Atualiza o período quando um botão é clicado
 
 if ticker_input:
     ticker = ticker_input
@@ -20,7 +28,7 @@ if ticker_input:
 
     # Buscar dados da ação
     stock = yf.Ticker(ticker)
-    dados = stock.history(period=periodos[periodo_escolhido])
+    dados = stock.history(period=periodos[periodo_selecionado])
 
     # Buscar preço atual e variação percentual
     preco_atual = dados["Close"].iloc[-1]
@@ -33,7 +41,7 @@ if ticker_input:
     # Exibir valor atual e variação percentual no topo
     st.markdown(f"""
     <h2 style='color:{cor_variacao};'>
-        {preco_atual:.2f} BRL {simbolo_variacao} {variacao:.2f} ({porcentagem:.2f}%) nos últimos {periodo_escolhido}
+        {preco_atual:.2f} BRL {simbolo_variacao} {variacao:.2f} ({porcentagem:.2f}%) nos últimos {periodo_selecionado}
     </h2>
     """, unsafe_allow_html=True)
 
@@ -57,7 +65,7 @@ if ticker_input:
 
     fig_price.update_layout(
         template="plotly_dark",
-        title=f"Evolução do Preço - {periodo_escolhido} ({ticker})",
+        title=f"Evolução do Preço - {periodo_selecionado} ({ticker})",
         xaxis_title="Data",
         yaxis_title="Preço (R$)",
         margin=dict(l=40, r=40, t=40, b=40),
@@ -66,62 +74,3 @@ if ticker_input:
     )
 
     st.plotly_chart(fig_price)
-
-    # 📌 Gráfico de Dividendos - Últimos 10 Anos
-    st.subheader(f"💰 Dividendos Anuais - {ticker}")
-    if not stock.dividends.empty:
-        stock.dividends.index = pd.to_datetime(stock.dividends.index)
-        dividendos = stock.dividends.resample("Y").sum()
-
-        # 📌 Pegando os últimos 10 anos corretamente
-        dividendos = dividendos.tail(10)
-
-        # 📌 Calcular o percentual de dividendos em relação ao preço médio do ano
-        preco_medio_anual = stock.history(period="10y")["Close"].resample("Y").mean()
-        preco_medio_anual.index = preco_medio_anual.index.year
-        preco_medio_anual = preco_medio_anual.reindex(dividendos.index, fill_value=1)
-        dividend_yield = (dividendos / preco_medio_anual) * 100  # Em %
-
-        # ✅ Remover valores NaN e infinitos
-        dividend_yield = dividend_yield.replace([float("inf"), -float("inf")], 0).fillna(0)
-
-        # Criar gráfico estilizado
-        fig_divid = go.Figure()
-
-        fig_divid.add_trace(go.Bar(
-            x=dividend_yield.index,  # Pegando os anos corretos
-            y=dividend_yield,
-            text=dividend_yield.apply(lambda x: f"{x:.2f}%"),  # Exibir % diretamente nas barras
-            textposition='outside',
-            marker=dict(
-                color="#ad986e",  # Barras douradas
-                opacity=0.8,  # Suavização na cor
-                line=dict(color="rgba(0, 0, 0, 0.3)", width=1),  # Contorno sutil
-            )
-        ))
-
-        fig_divid.update_layout(
-            template="plotly_dark",
-            title=f"Dividend Yield - Últimos 10 Anos ({ticker})",
-            xaxis_title="Ano",
-            yaxis_title="Yield (%)",
-            margin=dict(l=40, r=40, t=40, b=40)
-        )
-
-        st.plotly_chart(fig_divid)
-
-        # 📌 Estatísticas de Dividendos
-        st.subheader(f"📊 Estatísticas de Dividendos - {ticker}")
-        ultimo_dividendo = dividendos.iloc[-1] if not dividendos.empty else 0
-        media_10_anos = dividendos.mean()  # Agora pega só os últimos 10 anos
-        anos_sem_dividendo = dividendos[dividendos == 0].index.tolist()
-
-        st.write(f"🔹 **Último dividendo pago:** {ultimo_dividendo:.2f} ({dividend_yield.iloc[-1]:.2f}%)")
-        st.write(f"🔹 **Média dos últimos 10 anos:** {media_10_anos:.2f}")
-        
-        if anos_sem_dividendo:
-            st.write(f"❌ **Anos sem pagamento de dividendos:** {', '.join(map(str, anos_sem_dividendo))}")
-        else:
-            st.write(f"✅ **{ticker} pagou dividendos em todos os últimos 10 anos.**")
-    else:
-        st.warning(f"⚠️ Nenhuma informação de dividendos encontrada para {ticker}.")
