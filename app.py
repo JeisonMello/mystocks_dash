@@ -1,7 +1,7 @@
 import streamlit as st
 import yfinance as yf
 import pandas as pd
-import plotly.express as px
+import plotly.graph_objects as go
 
 # Título do dashboard
 st.title("📈 Dashboard de Ações")
@@ -23,12 +23,30 @@ if ticker_input:
     st.subheader(f"🏢 Setor da Empresa - {ticker}")
     st.write(f"📌 **{setor}**")
 
-    # Criar gráfico da cotação ao longo dos anos
+    # 📌 Estilizar o Gráfico de Preços com Linha Gradiente
     st.subheader(f"📈 Histórico de Preços - {ticker}")
-    fig = px.line(dados, x=dados.index, y="Close", title=f"Evolução do Preço - {ticker}")
-    st.plotly_chart(fig)
+    fig_price = go.Figure()
+    
+    fig_price.add_trace(go.Scatter(
+        x=dados.index, 
+        y=dados["Close"], 
+        mode='lines',
+        fill='tozeroy',  # Preenchimento gradiente
+        line=dict(color='rgba(138, 43, 226, 1)', width=3),  # Roxo vibrante
+        fillcolor='rgba(138, 43, 226, 0.3)'  # Transparência na área preenchida
+    ))
 
-    # Buscar e exibir dividendos
+    fig_price.update_layout(
+        template="plotly_dark",
+        title=f"Evolução do Preço - {ticker}",
+        xaxis_title="Ano",
+        yaxis_title="Preço (R$)",
+        margin=dict(l=40, r=40, t=40, b=40)
+    )
+
+    st.plotly_chart(fig_price)
+
+    # 📌 Estilizar Gráfico de Dividendos com Barras Degradê
     st.subheader(f"💰 Dividendos Anuais - {ticker}")
     if not stock.dividends.empty:
         stock.dividends.index = pd.to_datetime(stock.dividends.index)
@@ -44,35 +62,44 @@ if ticker_input:
         # 📌 Calcular o percentual de dividendos em relação ao preço médio do ano
         preco_medio_anual = dados["Close"].resample("Y").mean()
         preco_medio_anual.index = preco_medio_anual.index.year
-
-        # ✅ Preencher anos sem preços médios para evitar erro
         preco_medio_anual = preco_medio_anual.reindex(dividendos.index, fill_value=1)
-
         dividend_yield = (dividendos / preco_medio_anual) * 100  # Em %
 
         # ✅ Remover valores NaN e infinitos
         dividend_yield = dividend_yield.replace([float("inf"), -float("inf")], 0).fillna(0)
 
-        # Criar gráfico de dividendos com valores em %
-        if not dividend_yield.empty:
-            fig_divid = px.bar(
-                x=dividend_yield.index,
-                y=dividend_yield,
-                text=dividend_yield.apply(lambda x: f"{x:.2f}%"),  # Exibir % nas barras
-                title=f"Dividend Yield Anual - {ticker}"
-            )
-            st.plotly_chart(fig_divid)
-        else:
-            st.warning(f"⚠️ Não há dividendos suficientes para exibir um gráfico válido para {ticker}.")
+        # Criar gráfico estilizado
+        fig_divid = go.Figure()
 
-        # 📌 Calcular estatísticas adicionais
+        fig_divid.add_trace(go.Bar(
+            x=dividend_yield.index,
+            y=dividend_yield,
+            text=dividend_yield.apply(lambda x: f"{x:.2f}%"),  # Exibir % nas barras
+            textposition='outside',
+            marker=dict(
+                color=dividend_yield,
+                colorscale="bluered",  # Degradê azul/vermelho
+                showscale=True
+            )
+        ))
+
+        fig_divid.update_layout(
+            template="plotly_dark",
+            title=f"Dividend Yield Anual - {ticker}",
+            xaxis_title="Ano",
+            yaxis_title="Yield (%)",
+            margin=dict(l=40, r=40, t=40, b=40)
+        )
+
+        st.plotly_chart(fig_divid)
+
+        # 📌 Estatísticas de Dividendos
+        st.subheader(f"📊 Estatísticas de Dividendos - {ticker}")
         ultimo_dividendo = dividendos.iloc[-1] if not dividendos.empty else 0
         media_5_anos = dividendos[-5:].mean() if len(dividendos) >= 5 else dividendos.mean()
         media_historica = dividendos.mean()
         anos_sem_dividendo = dividendos[dividendos == 0].index.tolist()
 
-        # Exibir os dados abaixo do gráfico
-        st.subheader(f"📊 Estatísticas de Dividendos - {ticker}")
         st.write(f"🔹 **Último dividendo pago:** {ultimo_dividendo:.2f} ({dividend_yield.iloc[-1]:.2f}%)")
         st.write(f"🔹 **Média dos últimos 5 anos:** {media_5_anos:.2f}")
         st.write(f"🔹 **Média de dividendos (todo o histórico):** {media_historica:.2f}")
