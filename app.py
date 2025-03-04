@@ -51,7 +51,7 @@ if ticker_input:
 
     st.plotly_chart(fig_price)
 
-    # 📌 Estilizar Gráfico de Dividendos com Barras Douradas e Arredondadas
+    # 📌 Estilizar Gráfico de Dividendos com Barras Arredondadas
     st.subheader(f"💰 Dividendos Anuais - {ticker}")
     if not stock.dividends.empty:
         stock.dividends.index = pd.to_datetime(stock.dividends.index)
@@ -76,6 +76,7 @@ if ticker_input:
         # Criar gráfico estilizado
         fig_divid = go.Figure()
 
+        # Adiciona as barras principais
         fig_divid.add_trace(go.Bar(
             x=dividend_yield.index,
             y=dividend_yield,
@@ -88,8 +89,17 @@ if ticker_input:
             )
         ))
 
-        # 📌 Adicionar cantos arredondados nas barras
-        fig_divid.update_traces(marker_line_width=1.5, marker_line_color="black")  
+        # Simula um topo arredondado sobrepondo pontos
+        fig_divid.add_trace(go.Scatter(
+            x=dividend_yield.index,
+            y=dividend_yield, 
+            mode='markers',
+            marker=dict(
+                color="#ad986e",
+                size=12,  # Faz os pontos no topo parecerem um arredondamento
+                line=dict(color="rgba(0, 0, 0, 0.3)", width=1),
+            )
+        ))
 
         fig_divid.update_layout(
             template="plotly_white",
