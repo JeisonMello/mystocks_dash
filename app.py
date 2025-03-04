@@ -3,7 +3,7 @@ import yfinance as yf
 import pandas as pd
 import plotly.graph_objects as go
 
-# Estilização CSS para alinhar elementos ao estilo do Google Finance
+# Estilização CSS
 st.markdown("""
     <style>
         div[data-testid="stButton"] > button {
