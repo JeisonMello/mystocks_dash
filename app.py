@@ -23,7 +23,7 @@ if ticker_input:
     st.subheader(f"🏢 Setor da Empresa - {ticker}")
     st.write(f"📌 **{setor}**")
 
-    # 📌 Estilizar o Gráfico de Preços com Linha Gradiente
+    # 📌 Gráfico de Preços Mantendo Cores Originais
     st.subheader(f"📈 Histórico de Preços - {ticker}")
     fig_price = go.Figure()
     
@@ -31,9 +31,9 @@ if ticker_input:
         x=dados.index, 
         y=dados["Close"], 
         mode='lines',
-        fill='tozeroy',  # Preenchimento gradiente
-        line=dict(color='rgba(138, 43, 226, 1)', width=3),  # Roxo vibrante
-        fillcolor='rgba(138, 43, 226, 0.3)'  # Transparência na área preenchida
+        fill='tozeroy',
+        line=dict(color='#3454b4', width=3),  # Azul original
+        fillcolor='rgba(52, 84, 180, 0.3)'  # Transparência azul suave
     ))
 
     fig_price.update_layout(
@@ -46,14 +46,14 @@ if ticker_input:
 
     st.plotly_chart(fig_price)
 
-    # 📌 Gráfico de Dividendos - Restaurado para exibir os últimos 5 anos corretamente
+    # 📌 Gráfico de Dividendos - Ajustado para 10 anos e cores mantidas
     st.subheader(f"💰 Dividendos Anuais - {ticker}")
     if not stock.dividends.empty:
         stock.dividends.index = pd.to_datetime(stock.dividends.index)
         dividendos = stock.dividends.resample("Y").sum()
 
-        # Selecionar apenas os últimos 5 anos corretamente
-        dividendos = dividendos.tail(5)
+        # 📌 Pegando os últimos 10 anos corretamente
+        dividendos = dividendos.tail(10)
 
         # 📌 Calcular o percentual de dividendos em relação ao preço médio do ano
         preco_medio_anual = dados["Close"].resample("Y").mean()
@@ -68,20 +68,20 @@ if ticker_input:
         fig_divid = go.Figure()
 
         fig_divid.add_trace(go.Bar(
-            x=dividend_yield.index,  # Correção: pegando apenas os anos reais
+            x=dividend_yield.index,  # Pegando os anos corretos
             y=dividend_yield,
             text=dividend_yield.apply(lambda x: f"{x:.2f}%"),  # Exibir % diretamente nas barras
             textposition='outside',
             marker=dict(
-                color=dividend_yield,
-                colorscale="bluered",  # Degradê azul/vermelho
-                showscale=True
+                color="#ad986e",  # Barras douradas
+                opacity=0.8,  # Suavização na cor
+                line=dict(color="rgba(0, 0, 0, 0.3)", width=1),  # Contorno sutil
             )
         ))
 
         fig_divid.update_layout(
             template="plotly_dark",
-            title=f"Dividend Yield - Últimos 5 Anos ({ticker})",
+            title=f"Dividend Yield - Últimos 10 Anos ({ticker})",
             xaxis_title="Ano",
             yaxis_title="Yield (%)",
             margin=dict(l=40, r=40, t=40, b=40)
@@ -92,15 +92,15 @@ if ticker_input:
         # 📌 Estatísticas de Dividendos
         st.subheader(f"📊 Estatísticas de Dividendos - {ticker}")
         ultimo_dividendo = dividendos.iloc[-1] if not dividendos.empty else 0
-        media_5_anos = dividendos.mean()  # Agora pega só os últimos 5 anos
+        media_10_anos = dividendos.mean()  # Agora pega só os últimos 10 anos
         anos_sem_dividendo = dividendos[dividendos == 0].index.tolist()
 
         st.write(f"🔹 **Último dividendo pago:** {ultimo_dividendo:.2f} ({dividend_yield.iloc[-1]:.2f}%)")
-        st.write(f"🔹 **Média dos últimos 5 anos:** {media_5_anos:.2f}")
+        st.write(f"🔹 **Média dos últimos 10 anos:** {media_10_anos:.2f}")
         
         if anos_sem_dividendo:
             st.write(f"❌ **Anos sem pagamento de dividendos:** {', '.join(map(str, anos_sem_dividendo))}")
         else:
-            st.write(f"✅ **{ticker} pagou dividendos em todos os últimos 5 anos.**")
+            st.write(f"✅ **{ticker} pagou dividendos em todos os últimos 10 anos.**")
     else:
         st.warning(f"⚠️ Nenhuma informação de dividendos encontrada para {ticker}.")
