@@ -9,21 +9,17 @@ st.title("📈 Dashboard de Ações")
 # Entrada do usuário
 ticker_input = st.text_input("Digite o código da ação (ex: AAPL, TSLA, PETR4.SA):")
 
-# ✅ Verifica se o usuário digitou algo antes de modificar o ticker
 if ticker_input:
-    ticker = ticker_input  # Garante que estamos usando uma variável nova
-    
+    ticker = ticker_input
     if not ticker.endswith(".SA") and len(ticker) == 5:
         ticker += ".SA"
 
     # Buscar dados da ação
     stock = yf.Ticker(ticker)
-    dados = stock.history(period="10y")  # 10 anos de histórico
+    dados = stock.history(period="10y")
 
-    # ✅ Buscar setor da empresa
+    # Buscar setor da empresa
     setor = stock.info.get("sector", "Setor não encontrado")
-
-    # Exibir setor da empresa
     st.subheader("🏢 Setor da Empresa")
     st.write(f"📌 **{setor}**")
 
@@ -35,10 +31,32 @@ if ticker_input:
     # Buscar e exibir dividendos
     st.subheader("💰 Dividendos Anuais")
     if not stock.dividends.empty:
-        stock.dividends.index = pd.to_datetime(stock.dividends.index)  # Garante o formato datetime
+        stock.dividends.index = pd.to_datetime(stock.dividends.index)
         dividendos = stock.dividends.resample("Y").sum()
 
-        fig_divid = px.bar(x=dividendos.index.year, y=dividendos.values, title="Valor Pago em Dividendos Anualmente")
+        # Criar gráfico de dividendos com valores visíveis
+        fig_divid = px.bar(x=dividendos.index.year, 
+                           y=dividendos.values, 
+                           text_auto=".2f",  # Exibir valores diretamente nas barras
+                           title="Valor Pago em Dividendos Anualmente")
+
         st.plotly_chart(fig_divid)
+
+        # 📌 Calcular estatísticas adicionais
+        ultimo_dividendo = dividendos.iloc[-1] if not dividendos.empty else 0
+        media_5_anos = dividendos[-5:].mean() if len(dividendos) >= 5 else dividendos.mean()
+        media_historica = dividendos.mean()
+        anos_sem_dividendo = dividendos[dividendos == 0].index.year.tolist()
+
+        # Exibir os dados abaixo do gráfico
+        st.subheader("📊 Estatísticas de Dividendos")
+        st.write(f"🔹 **Último dividendo pago:** {ultimo_dividendo:.2f}")
+        st.write(f"🔹 **Média dos últimos 5 anos:** {media_5_anos:.2f}")
+        st.write(f"🔹 **Média de dividendos (todo o histórico):** {media_historica:.2f}")
+        
+        if anos_sem_dividendo:
+            st.write(f"❌ **Anos sem pagamento de dividendos:** {', '.join(map(str, anos_sem_dividendo))}")
+        else:
+            st.write("✅ **A empresa pagou dividendos em todos os anos disponíveis.**")
     else:
         st.warning("⚠️ Nenhuma informação de dividendos encontrada para esta ação.")
