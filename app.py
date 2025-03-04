@@ -4,7 +4,7 @@ import pandas as pd
 import plotly.graph_objects as go
 
 # Título do dashboard
-st.title("💰 Dividendos Anuais de Ações")
+st.title("📊 Dashboard de Ações")
 
 # Entrada do usuário
 ticker_input = st.text_input("Digite o código da ação (ex: AAPL, TSLA, PETR4.SA):")
@@ -16,8 +16,48 @@ if ticker_input:
 
     # Buscar dados da ação
     stock = yf.Ticker(ticker)
+    dados = stock.history(period="10y")
 
-    # 📌 Restaurando os Dividendos
+    # Buscar setor da empresa
+    setor = stock.info.get("sector", "Setor não encontrado")
+    st.subheader(f"🏢 Setor da Empresa - {ticker}")
+    st.write(f"📌 **{setor}**")
+
+    # =====================================
+    # 📌 PARTE 01 - HISTÓRICO DE PREÇOS
+    # =====================================
+    
+    st.subheader(f"📈 Histórico de Preços - {ticker}")
+    fig_price = go.Figure()
+
+    fig_price.add_trace(go.Scatter(
+        x=dados.index, 
+        y=dados["Close"], 
+        mode='lines',
+        fill='tozeroy',  # Preenchimento suave
+        line=dict(color='rgba(72, 61, 139, 1)', width=2),  # Azul Royal mais fino
+        fillcolor='rgba(72, 61, 139, 0.15)'  # Transparência suave no fundo
+    ))
+
+    fig_price.update_layout(
+        template="plotly_white",
+        title=f"Evolução do Preço - {ticker}",
+        xaxis_title="Ano",
+        yaxis_title="Preço (R$)",
+        margin=dict(l=40, r=40, t=40, b=40),
+        plot_bgcolor="rgba(0,0,0,0)",  # Fundo transparente
+        paper_bgcolor="rgba(0,0,0,0)",  # Fundo da área do gráfico
+        font=dict(color="gold"),  # Texto em dourado
+        xaxis=dict(showgrid=False),  # Remove grade vertical
+        yaxis=dict(showgrid=True, gridcolor="rgba(255, 215, 0, 0.2)")  # Grade dourada suave
+    )
+
+    st.plotly_chart(fig_price)
+
+    # =====================================
+    # 📌 PARTE 02 - DIVIDENDOS ANUAIS
+    # =====================================
+
     st.subheader(f"💰 Dividendos Anuais - {ticker}")
     if not stock.dividends.empty:
         stock.dividends.index = pd.to_datetime(stock.dividends.index)
