@@ -34,8 +34,16 @@ if ticker_input:
         stock.dividends.index = pd.to_datetime(stock.dividends.index)
         dividendos = stock.dividends.resample("Y").sum()
 
+        # ✅ Criar um índice completo de anos desde o primeiro registro até hoje
+        anos_completos = pd.Series(0, index=pd.date_range(start=dividendos.index.min(), 
+                                                          end=pd.Timestamp.today(), 
+                                                          freq="Y").year)
+
+        # ✅ Mesclar os dados reais de dividendos com os anos completos
+        dividendos = anos_completos.add(dividendos, fill_value=0)
+
         # Criar gráfico de dividendos com valores visíveis
-        fig_divid = px.bar(x=dividendos.index.year, 
+        fig_divid = px.bar(x=dividendos.index, 
                            y=dividendos.values, 
                            text_auto=".2f",  # Exibir valores diretamente nas barras
                            title="Valor Pago em Dividendos Anualmente")
@@ -46,7 +54,7 @@ if ticker_input:
         ultimo_dividendo = dividendos.iloc[-1] if not dividendos.empty else 0
         media_5_anos = dividendos[-5:].mean() if len(dividendos) >= 5 else dividendos.mean()
         media_historica = dividendos.mean()
-        anos_sem_dividendo = dividendos[dividendos == 0].index.year.tolist()
+        anos_sem_dividendo = dividendos[dividendos == 0].index.tolist()
 
         # Exibir os dados abaixo do gráfico
         st.subheader("📊 Estatísticas de Dividendos")
@@ -55,7 +63,8 @@ if ticker_input:
         st.write(f"🔹 **Média de dividendos (todo o histórico):** {media_historica:.2f}")
         
         if anos_sem_dividendo:
-            st.write(f"❌ **Anos sem pagamento de dividendos:** {', '.join(map(str, anos_sem_dividendo))}")
+            anos_formatados = ', '.join(map(str, anos_sem_dividendo))
+            st.write(f"❌ **Anos sem pagamento de dividendos:** {anos_formatados}")
         else:
             st.write("✅ **A empresa pagou dividendos em todos os anos disponíveis.**")
     else:
