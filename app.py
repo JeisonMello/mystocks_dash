@@ -32,8 +32,8 @@ if ticker_input:
         y=dados["Close"], 
         mode='lines',
         fill='tozeroy',  # Preenchimento suave
-        line=dict(color='rgba(72, 61, 139, 1)', width=2),  # Azul Royal mais fino
-        fillcolor='rgba(72, 61, 139, 0.15)'  # Transparência suave no fundo
+        line=dict(color='#142044', width=2),  # Azul Royal Blue
+        fillcolor='rgba(20, 32, 68, 0.15)'  # Transparência suave no fundo
     ))
 
     fig_price.update_layout(
@@ -44,9 +44,9 @@ if ticker_input:
         margin=dict(l=40, r=40, t=40, b=40),
         plot_bgcolor="rgba(0,0,0,0)",  # Fundo transparente
         paper_bgcolor="rgba(0,0,0,0)",  # Fundo da área do gráfico
-        font=dict(color="gold"),  # Texto em dourado
+        font=dict(color="#ad986e"),  # Texto em dourado elegante
         xaxis=dict(showgrid=False),  # Remove grade vertical
-        yaxis=dict(showgrid=True, gridcolor="rgba(255, 215, 0, 0.2)")  # Grade dourada suave
+        yaxis=dict(showgrid=True, gridcolor="rgba(173, 152, 110, 0.2)")  # Grade dourada suave
     )
 
     st.plotly_chart(fig_price)
@@ -82,7 +82,7 @@ if ticker_input:
             text=dividend_yield.apply(lambda x: f"{x:.2f}%"),  # Exibir % nas barras
             textposition='outside',
             marker=dict(
-                color="gold",  # Barras douradas
+                color="#ad986e",  # Barras douradas elegantes
                 opacity=0.8  # Suavização na cor
             )
         ))
@@ -95,9 +95,9 @@ if ticker_input:
             margin=dict(l=40, r=40, t=40, b=40),
             plot_bgcolor="rgba(0,0,0,0)",  # Fundo transparente
             paper_bgcolor="rgba(0,0,0,0)",  # Fundo da área do gráfico
-            font=dict(color="gold"),  # Texto em dourado
+            font=dict(color="#ad986e"),  # Texto em dourado elegante
             xaxis=dict(showgrid=False),
-            yaxis=dict(showgrid=True, gridcolor="rgba(255, 215, 0, 0.2)")  # Grade dourada suave
+            yaxis=dict(showgrid=True, gridcolor="rgba(173, 152, 110, 0.2)")  # Grade dourada suave
         )
 
         st.plotly_chart(fig_divid)
