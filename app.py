@@ -62,19 +62,21 @@ if ticker_input:
 
     st.plotly_chart(fig_price)
 
-    # 📌 GRÁFICO DE DIVIDENDOS - APENAS ÚLTIMOS 5 ANOS
+    # 📌 GRÁFICO DE DIVIDENDOS - ÚLTIMOS 5 ANOS
     st.subheader(f"💰 Dividendos Anuais - {ticker}")
     if not stock.dividends.empty:
         stock.dividends.index = pd.to_datetime(stock.dividends.index)
         dividendos = stock.dividends.resample("Y").sum()
 
-        # 📌 Selecionar apenas os últimos 5 anos
-        dividendos = dividendos.tail(5)
+        # 📌 Selecionar os últimos 5 anos disponíveis corretamente
+        anos_disponiveis = dividendos.index.year
+        anos_finais = anos_disponiveis[-5:]  # Pegando os últimos 5 anos reais
+        dividendos = dividendos[dividendos.index.year.isin(anos_finais)]
 
         # 📌 Calcular o percentual de dividendos em relação ao preço médio do ano
         preco_medio_anual = dados["Close"].resample("Y").mean()
         preco_medio_anual.index = preco_medio_anual.index.year
-        preco_medio_anual = preco_medio_anual.reindex(dividendos.index, fill_value=1)
+        preco_medio_anual = preco_medio_anual.reindex(dividendos.index.year, fill_value=1)
         dividend_yield = (dividendos / preco_medio_anual) * 100  # Em %
 
         # ✅ Remover valores NaN e infinitos
@@ -84,7 +86,7 @@ if ticker_input:
         fig_divid = go.Figure()
 
         fig_divid.add_trace(go.Bar(
-            x=dividend_yield.index,
+            x=dividend_yield.index.year,
             y=dividend_yield,
             text=dividend_yield.apply(lambda x: f"{x:.2f}%"),  # Exibir % diretamente nas barras
             textposition='outside',
