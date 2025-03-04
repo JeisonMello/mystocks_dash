@@ -32,8 +32,8 @@ if ticker_input:
         y=dados["Close"], 
         mode='lines',
         fill='tozeroy',  # Preenchimento suave
-        line=dict(color='#142044', width=2),  # Azul Royal Blue
-        fillcolor='rgba(20, 32, 68, 0.15)'  # Transparência suave no fundo
+        line=dict(color='#3454b4', width=2),  # Azul atualizado
+        fillcolor='rgba(52, 84, 180, 0.15)'  # Transparência suave no fundo
     ))
 
     fig_price.update_layout(
@@ -51,7 +51,7 @@ if ticker_input:
 
     st.plotly_chart(fig_price)
 
-    # 📌 Estilizar Gráfico de Dividendos com Barras Douradas e Fundo Transparente
+    # 📌 Estilizar Gráfico de Dividendos com Barras Douradas e Arredondadas
     st.subheader(f"💰 Dividendos Anuais - {ticker}")
     if not stock.dividends.empty:
         stock.dividends.index = pd.to_datetime(stock.dividends.index)
@@ -83,9 +83,13 @@ if ticker_input:
             textposition='outside',
             marker=dict(
                 color="#ad986e",  # Barras douradas elegantes
-                opacity=0.8  # Suavização na cor
+                opacity=0.8,  # Suavização na cor
+                line=dict(color="rgba(0, 0, 0, 0.3)", width=1),  # Contorno sutil
             )
         ))
+
+        # 📌 Adicionar cantos arredondados nas barras
+        fig_divid.update_traces(marker_line_width=1.5, marker_line_color="black")  
 
         fig_divid.update_layout(
             template="plotly_white",
