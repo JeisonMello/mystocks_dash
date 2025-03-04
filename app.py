@@ -34,13 +34,16 @@ if ticker_input:
         stock.dividends.index = pd.to_datetime(stock.dividends.index)
         dividendos = stock.dividends.resample("Y").sum()
 
-        # ✅ Criar um índice completo de anos desde o primeiro registro até hoje
-        anos_completos = pd.Series(0, index=pd.date_range(start=dividendos.index.min(), 
-                                                          end=pd.Timestamp.today(), 
-                                                          freq="Y").year)
+        # ✅ Verifica se há pelo menos um ano de dividendos antes de criar a série de anos completos
+        if not dividendos.empty:
+            # Criar um índice completo de anos desde o primeiro registro até o ano atual
+            ano_inicio = dividendos.index.min().year
+            ano_atual = pd.Timestamp.today().year
+            anos_completos = pd.Series(0, index=range(ano_inicio, ano_atual + 1))
 
-        # ✅ Mesclar os dados reais de dividendos com os anos completos
-        dividendos = anos_completos.add(dividendos, fill_value=0)
+            # ✅ Mesclar os dados reais de dividendos com os anos completos
+            dividendos.index = dividendos.index.year  # Converte para anos inteiros
+            dividendos = anos_completos.add(dividendos, fill_value=0)
 
         # Criar gráfico de dividendos com valores visíveis
         fig_divid = px.bar(x=dividendos.index, 
