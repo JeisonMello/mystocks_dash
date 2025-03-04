@@ -20,9 +20,12 @@ if ticker_input:
     stock = yf.Ticker(ticker)
     dados = stock.history(period="10y")  # 10 anos de histórico
 
-    # Exibir tabela de dados básicos
-    st.subheader(f"📊 Dados Gerais da Ação: {ticker}")
-    st.write(dados.tail(10))  # Exibir as últimas 10 linhas
+    # ✅ Buscar setor da empresa
+    setor = stock.info.get("sector", "Setor não encontrado")
+
+    # Exibir setor da empresa
+    st.subheader("🏢 Setor da Empresa")
+    st.write(f"📌 **{setor}**")
 
     # Criar gráfico da cotação ao longo dos anos
     st.subheader("📈 Histórico de Preços")
