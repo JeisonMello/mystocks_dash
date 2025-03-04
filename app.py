@@ -16,12 +16,16 @@ if ticker_input:
 
     # Buscar dados da ação
     stock = yf.Ticker(ticker)
-    dados = stock.history(period="10y")
+    dados = stock.history(period="6mo")  # Últimos 6 meses
 
-    # Buscar setor da empresa
-    setor = stock.info.get("sector", "Setor não encontrado")
-    st.subheader(f"🏢 Setor da Empresa - {ticker}")
-    st.write(f"📌 **{setor}**")
+    # Buscar preço atual e variação do dia
+    preco_atual = dados["Close"].iloc[-1]
+    variacao = preco_atual - dados["Close"].iloc[-2]
+    porcentagem = (variacao / dados["Close"].iloc[-2]) * 100
+    cor_variacao = "green" if variacao > 0 else "red"
+
+    # Exibir o preço acima do gráfico
+    st.markdown(f"<h2 style='color:{cor_variacao};'> {preco_atual:.2f} BRL ({variacao:.2f} BRL, {porcentagem:.2f}%)</h2>", unsafe_allow_html=True)
 
     # 📌 Estilizar o Gráfico de Preços com Fundo Transparente e Linhas Elegantes
     st.subheader(f"📈 Histórico de Preços - {ticker}")
@@ -31,15 +35,13 @@ if ticker_input:
         x=dados.index, 
         y=dados["Close"], 
         mode='lines',
-        fill='tozeroy',  # Preenchimento suave
         line=dict(color='#3454b4', width=2),  # Azul atualizado
-        fillcolor='rgba(52, 84, 180, 0.15)'  # Transparência suave no fundo
     ))
 
     fig_price.update_layout(
         template="plotly_white",
-        title=f"Evolução do Preço - {ticker}",
-        xaxis_title="Ano",
+        title=f"Evolução do Preço - Últimos 6 Meses ({ticker})",
+        xaxis_title="Data",
         yaxis_title="Preço (R$)",
         margin=dict(l=40, r=40, t=40, b=40),
         plot_bgcolor="rgba(0,0,0,0)",  # Fundo transparente
@@ -51,7 +53,7 @@ if ticker_input:
 
     st.plotly_chart(fig_price)
 
-    # 📌 Estilizar Gráfico de Dividendos com Barras Arredondadas
+    # 📌 Estilizar Gráfico de Dividendos sem bolinha e sem legenda
     st.subheader(f"💰 Dividendos Anuais - {ticker}")
     if not stock.dividends.empty:
         stock.dividends.index = pd.to_datetime(stock.dividends.index)
@@ -73,10 +75,9 @@ if ticker_input:
         # ✅ Remover valores NaN e infinitos
         dividend_yield = dividend_yield.replace([float("inf"), -float("inf")], 0).fillna(0)
 
-        # Criar gráfico estilizado
+        # Criar gráfico estilizado sem bolinha e sem legenda
         fig_divid = go.Figure()
 
-        # Adiciona as barras principais
         fig_divid.add_trace(go.Bar(
             x=dividend_yield.index,
             y=dividend_yield,
@@ -86,18 +87,6 @@ if ticker_input:
                 color="#ad986e",  # Barras douradas elegantes
                 opacity=0.8,  # Suavização na cor
                 line=dict(color="rgba(0, 0, 0, 0.3)", width=1),  # Contorno sutil
-            )
-        ))
-
-        # Simula um topo arredondado sobrepondo pontos
-        fig_divid.add_trace(go.Scatter(
-            x=dividend_yield.index,
-            y=dividend_yield, 
-            mode='markers',
-            marker=dict(
-                color="#ad986e",
-                size=12,  # Faz os pontos no topo parecerem um arredondamento
-                line=dict(color="rgba(0, 0, 0, 0.3)", width=1),
             )
         ))
 
@@ -111,7 +100,8 @@ if ticker_input:
             paper_bgcolor="rgba(0,0,0,0)",  # Fundo da área do gráfico
             font=dict(color="#ad986e"),  # Texto em dourado elegante
             xaxis=dict(showgrid=False),
-            yaxis=dict(showgrid=True, gridcolor="rgba(173, 152, 110, 0.2)")  # Grade dourada suave
+            yaxis=dict(showgrid=True, gridcolor="rgba(173, 152, 110, 0.2)"),  # Grade dourada suave
+            showlegend=False  # ❌ Removendo a legenda "trace 0" e "trace 1"
         )
 
         st.plotly_chart(fig_divid)
