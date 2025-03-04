@@ -23,30 +23,35 @@ if ticker_input:
     st.subheader(f"🏢 Setor da Empresa - {ticker}")
     st.write(f"📌 **{setor}**")
 
-    # 📌 Estilizar o Gráfico de Preços com Linha Gradiente
+    # 📌 Estilizar o Gráfico de Preços com Fundo Transparente e Linhas Elegantes
     st.subheader(f"📈 Histórico de Preços - {ticker}")
     fig_price = go.Figure()
-    
+
     fig_price.add_trace(go.Scatter(
         x=dados.index, 
         y=dados["Close"], 
         mode='lines',
-        fill='tozeroy',  # Preenchimento gradiente
-        line=dict(color='rgba(138, 43, 226, 1)', width=3),  # Roxo vibrante
-        fillcolor='rgba(138, 43, 226, 0.3)'  # Transparência na área preenchida
+        fill='tozeroy',  # Preenchimento suave
+        line=dict(color='rgba(72, 61, 139, 1)', width=2),  # Azul Royal mais fino
+        fillcolor='rgba(72, 61, 139, 0.15)'  # Transparência suave no fundo
     ))
 
     fig_price.update_layout(
-        template="plotly_dark",
+        template="plotly_white",
         title=f"Evolução do Preço - {ticker}",
         xaxis_title="Ano",
         yaxis_title="Preço (R$)",
-        margin=dict(l=40, r=40, t=40, b=40)
+        margin=dict(l=40, r=40, t=40, b=40),
+        plot_bgcolor="rgba(0,0,0,0)",  # Fundo transparente
+        paper_bgcolor="rgba(0,0,0,0)",  # Fundo da área do gráfico
+        font=dict(color="gold"),  # Texto em dourado
+        xaxis=dict(showgrid=False),  # Remove grade vertical
+        yaxis=dict(showgrid=True, gridcolor="rgba(255, 215, 0, 0.2)")  # Grade dourada suave
     )
 
     st.plotly_chart(fig_price)
 
-    # 📌 Estilizar Gráfico de Dividendos com Barras Degradê
+    # 📌 Estilizar Gráfico de Dividendos com Barras Douradas e Fundo Transparente
     st.subheader(f"💰 Dividendos Anuais - {ticker}")
     if not stock.dividends.empty:
         stock.dividends.index = pd.to_datetime(stock.dividends.index)
@@ -77,18 +82,22 @@ if ticker_input:
             text=dividend_yield.apply(lambda x: f"{x:.2f}%"),  # Exibir % nas barras
             textposition='outside',
             marker=dict(
-                color=dividend_yield,
-                colorscale="bluered",  # Degradê azul/vermelho
-                showscale=True
+                color="gold",  # Barras douradas
+                opacity=0.8  # Suavização na cor
             )
         ))
 
         fig_divid.update_layout(
-            template="plotly_dark",
+            template="plotly_white",
             title=f"Dividend Yield Anual - {ticker}",
             xaxis_title="Ano",
             yaxis_title="Yield (%)",
-            margin=dict(l=40, r=40, t=40, b=40)
+            margin=dict(l=40, r=40, t=40, b=40),
+            plot_bgcolor="rgba(0,0,0,0)",  # Fundo transparente
+            paper_bgcolor="rgba(0,0,0,0)",  # Fundo da área do gráfico
+            font=dict(color="gold"),  # Texto em dourado
+            xaxis=dict(showgrid=False),
+            yaxis=dict(showgrid=True, gridcolor="rgba(255, 215, 0, 0.2)")  # Grade dourada suave
         )
 
         st.plotly_chart(fig_divid)
