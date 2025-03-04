@@ -10,6 +10,17 @@ st.title("📈 Dashboard de Ações")
 ticker = st.text_input("Digite o código da ação (ex: AAPL, TSLA, PETR4.SA):")
 
 if ticker:
+    # Caixa de seleção para escolher uma ação
+ticker = st.text_input("Digite o código da ação (ex: AAPL, TSLA, PETR4.SA):")
+
+# ✅ Adiciona automaticamente o sufixo ".SA" para ações brasileiras
+if not ticker.endswith(".SA") and len(ticker) == 5:
+    ticker += ".SA"
+
+if ticker:
+    # Buscar os dados da ação
+    stock = yf.Ticker(ticker)
+    dados = stock.history(period="10y")  # 10 anos de histórico
     # Buscar os dados da ação
     stock = yf.Ticker(ticker)
     dados = stock.history(period="10y")  # 10 anos de histórico
