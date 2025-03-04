@@ -61,13 +61,13 @@ if ticker_input:
     else:
         st.warning("⚠️ Nenhuma informação de dividendos encontrada para esta ação.")
 
-    # 📌 Adicionar tabela com histórico de dividendos desde a abertura de capital
-    st.subheader("📅 Histórico de Dividendos desde a Abertura de Capital")
+    # 📌 Adicionar tabela com histórico de dividendos desde 2006
+    st.subheader("📅 Histórico de Dividendos desde 2006")
     
     # Dados de exemplo (substitua pelos dados reais)
     dados_dividendos = {
-        "Ano": [2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016],
-        "Valor Pago por Ação (R$)": [0.50, 0.45, 0.40, 0.35, 0.30, 0.25, 0.20, 0.15, 0.10, 0.05]
+        "Ano": [2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015, 2014, 2013, 2012, 2011, 2010, 2009, 2008, 2007, 2006],
+        "Valor Pago por Ação (R$)": [0.2711, 0.5143, 0.3969, 0.3064, 0.4280, 0.7059, 0.6313, 0.2818, 0.3143, 0.4099, 0.1729, 0.2957, 0.1358, 0.3735, 0.2403, 0.1682, 0.0614, 0.1272, 0.0264]
     }
     df_dividendos = pd.DataFrame(dados_dividendos)
     st.write(df_dividendos)
