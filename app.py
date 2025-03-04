@@ -76,7 +76,7 @@ if ticker_input:
         # 📌 Calcular o percentual de dividendos em relação ao preço médio do ano
         preco_medio_anual = dados["Close"].resample("Y").mean()
         preco_medio_anual.index = preco_medio_anual.index.year
-        preco_medio_anual = preco_medio_anual.reindex(dividendos.index.year, fill_value=1)
+        preco_medio_anual = preco_medio_anual.reindex(dividendos.index, fill_value=1)
         dividend_yield = (dividendos / preco_medio_anual) * 100  # Em %
 
         # ✅ Remover valores NaN e infinitos
@@ -86,7 +86,7 @@ if ticker_input:
         fig_divid = go.Figure()
 
         fig_divid.add_trace(go.Bar(
-            x=dividend_yield.index.year,
+            x=dividend_yield.index,  # Removido `.year` para evitar erro
             y=dividend_yield,
             text=dividend_yield.apply(lambda x: f"{x:.2f}%"),  # Exibir % diretamente nas barras
             textposition='outside',
