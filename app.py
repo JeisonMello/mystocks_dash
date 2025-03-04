@@ -111,24 +111,20 @@ if ticker_input:
 
     st.plotly_chart(fig_price)
 
-    # 📌 Restaurando os Dividendos para sempre aparecerem
+    # 📌 Restaurando os Dividendos
     st.subheader(f"💰 Dividendos Anuais - {ticker}")
     if not stock.dividends.empty:
         stock.dividends.index = pd.to_datetime(stock.dividends.index)
         dividendos = stock.dividends.resample("Y").sum().tail(10)
 
-        # 📌 Calcular o percentual de dividendos em relação ao preço médio do ano
         preco_medio_anual = stock.history(period="10y")["Close"].resample("Y").mean()
         preco_medio_anual.index = preco_medio_anual.index.year
         preco_medio_anual = preco_medio_anual.reindex(dividendos.index, fill_value=1)
         dividend_yield = (dividendos / preco_medio_anual) * 100  
 
-        # ✅ Remover valores NaN e infinitos
         dividend_yield = dividend_yield.replace([float("inf"), -float("inf")], 0).fillna(0)
 
-        # Criar gráfico estilizado
         fig_divid = go.Figure()
-
         fig_divid.add_trace(go.Bar(
             x=dividend_yield.index,
             y=dividend_yield,
@@ -146,19 +142,5 @@ if ticker_input:
         )
 
         st.plotly_chart(fig_divid)
-
-        # 📌 Estatísticas de Dividendos
-        st.subheader(f"📊 Estatísticas de Dividendos - {ticker}")
-        ultimo_dividendo = dividendos.iloc[-1] if not dividendos.empty else 0
-        media_10_anos = dividendos.mean()
-        anos_sem_dividendo = dividendos[dividendos == 0].index.tolist()
-
-        st.write(f"🔹 **Último dividendo pago:** {ultimo_dividendo:.2f} ({dividend_yield.iloc[-1]:.2f}%)")
-        st.write(f"🔹 **Média dos últimos 10 anos:** {media_10_anos:.2f}")
-
-        if anos_sem_dividendo:
-            st.write(f"❌ **Anos sem pagamento de dividendos:** {', '.join(map(str, anos_sem_dividendo))}")
-        else:
-            st.write(f"✅ **{ticker} pagou dividendos em todos os últimos 10 anos.**")
     else:
         st.warning(f"⚠️ Nenhuma informação de dividendos encontrada para {ticker}.")
