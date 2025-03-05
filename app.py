@@ -47,7 +47,7 @@ st.markdown("""
 st.title("Dashboard da Ação")
 
 # Campo de entrada para o código da ação
-ticker = st.text_input("Digite o código da ação (ex: AAPL, TSLA, PETR4.SA):").upper()
+ticker = st.text_input("Digite o código da ação (ex: AAPL, TSLA, PETR4.SA):").strip().upper()
 
 # Se um ticker foi inserido, buscamos os dados
 if ticker:
@@ -55,7 +55,7 @@ if ticker:
         stock = yf.Ticker(ticker)
         stock_info = stock.info  
 
-        if "longName" not in stock_info:
+        if not stock_info or "longName" not in stock_info:
             st.error("❌ Ação não encontrada! Verifique o código e tente novamente.")
         else:
             company_name = stock_info.get("longName", ticker)
@@ -86,32 +86,35 @@ if ticker:
             periodo = periodos[st.session_state["periodo_selecionado"]]
             dados = stock.history(period=periodo)
 
-            fig_price = go.Figure()
-            fig_price.add_trace(go.Scatter(
-                x=dados.index, 
-                y=dados["Close"], 
-                mode='lines',
-                line=dict(color='#4285F4', width=2),
-                fill='tozeroy',
-                fillcolor='rgba(66, 133, 244, 0.2)'  
-            ))
+            if dados.empty:
+                st.error("❌ Nenhum dado encontrado para esse código de ação.")
+            else:
+                fig_price = go.Figure()
+                fig_price.add_trace(go.Scatter(
+                    x=dados.index, 
+                    y=dados["Close"], 
+                    mode='lines',
+                    line=dict(color='#4285F4', width=2),
+                    fill='tozeroy',
+                    fillcolor='rgba(66, 133, 244, 0.2)'  
+                ))
 
-            min_price = dados["Close"].min()
-            max_price = dados["Close"].max()
-            fig_price.update_layout(
-                template="plotly_dark",
-                xaxis_title="",
-                yaxis_title="Preço (R$)",
-                margin=dict(l=40, r=40, t=40, b=40),
-                font=dict(color="white"),
-                xaxis=dict(showgrid=False),
-                yaxis=dict(range=[min_price * 0.98, max_price * 1.02],
-                        showgrid=True, gridcolor="rgba(200, 200, 200, 0.2)"),
-                plot_bgcolor="rgba(0,0,0,0)",
-                paper_bgcolor="rgba(0,0,0,0)"
-            )
+                min_price = dados["Close"].min()
+                max_price = dados["Close"].max()
+                fig_price.update_layout(
+                    template="plotly_dark",
+                    xaxis_title="",
+                    yaxis_title="Preço (R$)",
+                    margin=dict(l=40, r=40, t=40, b=40),
+                    font=dict(color="white"),
+                    xaxis=dict(showgrid=False),
+                    yaxis=dict(range=[min_price * 0.98, max_price * 1.02],
+                            showgrid=True, gridcolor="rgba(200, 200, 200, 0.2)"),
+                    plot_bgcolor="rgba(0,0,0,0)",
+                    paper_bgcolor="rgba(0,0,0,0)"
+                )
 
-            st.plotly_chart(fig_price)
+                st.plotly_chart(fig_price)
 
     except Exception as e:
         st.error(f"❌ Erro ao buscar os dados da ação: {str(e)}")
