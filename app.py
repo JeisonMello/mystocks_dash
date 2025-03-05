@@ -3,6 +3,42 @@ import yfinance as yf
 import pandas as pd
 import plotly.graph_objects as go
 
+# Estilização CSS para alinhar os elementos ao estilo do Google Finance
+st.markdown("""
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        div[data-testid="stButton"] > button {
+            background-color: transparent !important;
+            border: none !important;
+            color: #cccccc !important;
+            font-size: 16px !important;
+            font-weight: normal !important;
+            padding: 6px 15px !important;
+            text-transform: none !important;
+        }
+        div[data-testid="stButton"] > button:hover {
+            color: #ffffff !important;
+            border-bottom: 2px solid #4285F4 !important;
+        }
+        div[data-testid="stButton"] > button:focus {
+            color: #4285F4 !important;
+            border-bottom: 2px solid #4285F4 !important;
+        }
+        hr {
+            border: 0;
+            height: 1px;
+            background: #666;
+            margin: 10px 0 10px 0;
+        }
+        h2 {
+            font-size: 24px !important;
+            font-weight: bold !important;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
 # Título do dashboard
 st.title("📊 Dashboard de Ações")
 
@@ -35,8 +71,8 @@ if ticker_input:
         y=dados["Close"], 
         mode='lines',
         fill='tozeroy',  # Preenchimento suave
-        line=dict(color='rgba(72, 61, 139, 1)', width=2),  # Azul Royal mais fino
-        fillcolor='rgba(72, 61, 139, 0.15)'  # Transparência suave no fundo
+        line=dict(color='#4285F4', width=2),  # Azul Google Finance mais fino
+        fillcolor='rgba(66, 133, 244, 0.2)'  # Transparência suave no fundo
     ))
 
     fig_price.update_layout(
@@ -47,9 +83,9 @@ if ticker_input:
         margin=dict(l=40, r=40, t=40, b=40),
         plot_bgcolor="rgba(0,0,0,0)",  # Fundo transparente
         paper_bgcolor="rgba(0,0,0,0)",  # Fundo da área do gráfico
-        font=dict(color="gold"),  # Texto em dourado
+        font=dict(color="white"),  # Texto branco
         xaxis=dict(showgrid=False),  # Remove grade vertical
-        yaxis=dict(showgrid=True, gridcolor="rgba(255, 215, 0, 0.2)")  # Grade dourada suave
+        yaxis=dict(showgrid=True, gridcolor="rgba(200, 200, 200, 0.2)")  # Grade cinza suave
     )
 
     st.plotly_chart(fig_price)
@@ -84,7 +120,8 @@ if ticker_input:
             title=f"Dividend Yield - Últimos 10 Anos ({ticker})",
             xaxis_title="Ano",
             yaxis_title="Yield (%)",
-            margin=dict(l=40, r=40, t=40, b=40)
+            margin=dict(l=40, r=40, t=40, b=40),
+            font=dict(color="white")
         )
 
         st.plotly_chart(fig_divid)
