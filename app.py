@@ -55,7 +55,7 @@ st.markdown("""
 # Título do dashboard
 st.title("Dashboard da Ação")
 
-# Entrada do usuário
+# Entrada do usuário para selecionar uma ação
 ticker_input = st.text_input("Digite o código da ação (ex: AAPL, TSLA, PETR4.SA):")
 
 if ticker_input:
@@ -75,14 +75,14 @@ if ticker_input:
 
     # Exibir nome da ação e setor corretamente
     st.subheader(ticker)
-    st.markdown(f'<div class="sector-text">Sector: {setor_en}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="sector-text">Setor: {setor_en}</div>', unsafe_allow_html=True)
 
-    # =====================================
+    # ==========================
     # HISTÓRICO DE PREÇOS
-    # =====================================
+    # ==========================
     st.subheader(f"Histórico de Preços")
 
-    # Botões de período (agora interativos)
+    # Definição dos períodos disponíveis
     periodos = {
         "1D": "1d", "5D": "5d", "1M": "1mo", "6M": "6mo",
         "YTD": "ytd", "1Y": "1y", "5Y": "5y", "Max": "max"
@@ -103,24 +103,35 @@ if ticker_input:
     # Exibir os períodos corretamente
     st.markdown(periodo_html, unsafe_allow_html=True)
 
-    # Captura de cliques no frontend para alterar o período
-    st.markdown("""
-        <script>
-            function set_periodo(period) {
-                document.getElementById("hidden_period").value = period;
-                document.getElementById("hidden_form").submit();
-            }
-        </script>
-        <form id="hidden_form">
-            <input type="hidden" id="hidden_period" name="period">
-        </form>
-    """, unsafe_allow_html=True)
+    # Captura de cliques para alterar o período (simulando evento do frontend)
+    period_selected = st.session_state["periodo_selecionado"]
 
-    # Captura do período selecionado via query_params atualizado
-    period_selected = st.query_params.get("period", [st.session_state["periodo_selecionado"]])[0]
-
-    if period_selected in periodos:
-        st.session_state["periodo_selecionado"] = period_selected
+    # Criando botões invisíveis para capturar cliques corretamente
+    col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
+    with col1:
+        if st.button("1D", key="1D"):
+            st.session_state["periodo_selecionado"] = "1D"
+    with col2:
+        if st.button("5D", key="5D"):
+            st.session_state["periodo_selecionado"] = "5D"
+    with col3:
+        if st.button("1M", key="1M"):
+            st.session_state["periodo_selecionado"] = "1M"
+    with col4:
+        if st.button("6M", key="6M"):
+            st.session_state["periodo_selecionado"] = "6M"
+    with col5:
+        if st.button("YTD", key="YTD"):
+            st.session_state["periodo_selecionado"] = "YTD"
+    with col6:
+        if st.button("1Y", key="1Y"):
+            st.session_state["periodo_selecionado"] = "1Y"
+    with col7:
+        if st.button("5Y", key="5Y"):
+            st.session_state["periodo_selecionado"] = "5Y"
+    with col8:
+        if st.button("Max", key="Max"):
+            st.session_state["periodo_selecionado"] = "Max"
 
     # Atualizar os dados com base no período selecionado
     periodo = periodos[st.session_state["periodo_selecionado"]]
