@@ -3,118 +3,147 @@ import yfinance as yf
 import pandas as pd
 import plotly.graph_objects as go
 
-# Estilização CSS para alinhar com o Google Finance
+# Estilização CSS para alinhar os elementos ao estilo do Google Finance
 st.markdown("""
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
-        
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: Arial, sans-serif;
         }
-        .period-container {
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            padding: 8px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        h2 {
+            font-size: 32px !important;
+            font-weight: bold !important;
+            margin-bottom: 0px !important;
         }
-        .period-selector {
-            font-size: 16px;
-            font-weight: 600;
-            color: #ccc;
-            cursor: pointer;
-            padding: 8px 12px;
-            transition: color 0.2s ease-in-out, border-bottom 0.2s ease-in-out;
-            user-select: none;
+        .subtext {
+            font-size: 20px !important;
+            font-weight: normal !important;
+            color: #999999 !important;
         }
-        .period-selector:hover {
-            color: #ffffff;
+        .positive {
+            color: #34A853 !important;
+            font-size: 20px !important;
         }
-        .selected-period {
-            color: #4285F4;
-            border-bottom: 3px solid #4285F4;
-            padding-bottom: 2px;
+        .negative {
+            color: #EA4335 !important;
+            font-size: 20px !important;
         }
-        .sector-text {
-            font-size: 18px;
-            font-weight: 500;
-            color: white;
+        hr {
+            border: 0;
+            height: 1px;
+            background: #666;
+            margin: 10px 0 10px 0;
         }
     </style>
 """, unsafe_allow_html=True)
 
 # Título do dashboard
-st.title("Dashboard da Ação")
+st.title("📊 Dashboard de Ações")
 
-# Campo de entrada para o código da ação
-ticker = st.text_input("Digite o código da ação (ex: AAPL, TSLA, PETR4.SA):").strip().upper()
+# Entrada do usuário
+ticker_input = st.text_input("Digite o código da ação (ex: AAPL, TSLA, PETR4.SA):")
 
-# Se um ticker foi inserido, buscamos os dados
-if ticker:
-    try:
-        stock = yf.Ticker(ticker)
-        stock_info = stock.info  
+if ticker_input:
+    ticker = ticker_input
+    if not ticker.endswith(".SA") and len(ticker) == 5:
+        ticker += ".SA"
 
-        if not stock_info or "longName" not in stock_info:
-            st.error("❌ Ação não encontrada! Verifique o código e tente novamente.")
+    # Buscar dados da ação
+    stock = yf.Ticker(ticker)
+    dados = stock.history(period="10y")
+
+    # Buscar preço atual
+    preco_atual = dados["Close"].iloc[-1]
+    preco_anterior = dados["Close"].iloc[0]
+    variacao = preco_atual - preco_anterior
+    porcentagem = (variacao / preco_anterior) * 100
+    cor_variacao = "positive" if variacao > 0 else "negative"
+    simbolo_variacao = "▲" if variacao > 0 else "▼"
+
+    # Exibir o preço da ação seguindo o padrão do Google Finance
+    st.markdown(f"""
+        <h2>{preco_atual:.2f} BRL <span class="subtext">BRL</span></h2>
+        <p class="{cor_variacao}">{simbolo_variacao} {variacao:.2f} ({porcentagem:.2f}%) hoje</p>
+    """, unsafe_allow_html=True)
+
+    # =====================================
+    # 📌 PARTE 01 - HISTÓRICO DE PREÇOS
+    # =====================================
+    
+    st.subheader(f"📈 Histórico de Preços - {ticker}")
+    fig_price = go.Figure()
+
+    fig_price.add_trace(go.Scatter(
+        x=dados.index, 
+        y=dados["Close"], 
+        mode='lines',
+        fill='tozeroy',  # Preenchimento suave
+        line=dict(color='#4285F4', width=2),  # Azul Google Finance mais fino
+        fillcolor='rgba(66, 133, 244, 0.2)'  # Transparência suave no fundo
+    ))
+
+    fig_price.update_layout(
+        template="plotly_white",
+        title=f"Evolução do Preço - {ticker}",
+        xaxis_title="Ano",
+        yaxis_title="Preço (R$)",
+        margin=dict(l=40, r=40, t=40, b=40),
+        plot_bgcolor="rgba(0,0,0,0)",  # Fundo transparente
+        paper_bgcolor="rgba(0,0,0,0)",  # Fundo da área do gráfico
+        font=dict(color="white"),  # Texto branco
+        xaxis=dict(showgrid=False),  # Remove grade vertical
+        yaxis=dict(showgrid=True, gridcolor="rgba(200, 200, 200, 0.2)")  # Grade cinza suave
+    )
+
+    st.plotly_chart(fig_price)
+
+    # =====================================
+    # 📌 PARTE 02 - DIVIDENDOS ANUAIS
+    # =====================================
+
+    st.subheader(f"💰 Dividendos Anuais - {ticker}")
+    if not stock.dividends.empty:
+        stock.dividends.index = pd.to_datetime(stock.dividends.index)
+        dividendos = stock.dividends.resample("Y").sum().tail(10)
+
+        preco_medio_anual = stock.history(period="10y")["Close"].resample("Y").mean()
+        preco_medio_anual.index = preco_medio_anual.index.year
+        preco_medio_anual = preco_medio_anual.reindex(dividendos.index, fill_value=1)
+        dividend_yield = (dividendos / preco_medio_anual) * 100  
+
+        dividend_yield = dividend_yield.replace([float("inf"), -float("inf")], 0).fillna(0)
+
+        fig_divid = go.Figure()
+        fig_divid.add_trace(go.Bar(
+            x=dividend_yield.index,
+            y=dividend_yield,
+            text=dividend_yield.apply(lambda x: f"{x:.2f}%"),
+            textposition='outside',
+            marker=dict(color="#ad986e", opacity=0.8, line=dict(color="rgba(0, 0, 0, 0.3)", width=1)),
+        ))
+
+        fig_divid.update_layout(
+            template="plotly_dark",
+            title=f"Dividend Yield - Últimos 10 Anos ({ticker})",
+            xaxis_title="Ano",
+            yaxis_title="Yield (%)",
+            margin=dict(l=40, r=40, t=40, b=40),
+            font=dict(color="white")
+        )
+
+        st.plotly_chart(fig_divid)
+
+        # 📌 Estatísticas de Dividendos
+        st.subheader(f"📊 Estatísticas de Dividendos - {ticker}")
+        ultimo_dividendo = dividendos.iloc[-1] if not dividendos.empty else 0
+        media_10_anos = dividendos.mean()
+        anos_sem_dividendo = dividendos[dividendos == 0].index.tolist()
+
+        st.write(f"🔹 **Último dividendo pago:** {ultimo_dividendo:.2f} ({dividend_yield.iloc[-1]:.2f}%)")
+        st.write(f"🔹 **Média dos últimos 10 anos:** {media_10_anos:.2f}")
+
+        if anos_sem_dividendo:
+            st.write(f"❌ **Anos sem pagamento de dividendos:** {', '.join(map(str, anos_sem_dividendo))}")
         else:
-            company_name = stock_info.get("longName", ticker)
-            setor_en = stock_info.get("sector", "Setor não disponível")
-
-            st.subheader(company_name)
-            st.markdown(f'<div class="sector-text">Setor: {setor_en}</div>', unsafe_allow_html=True)
-
-            # ==========================
-            # HISTÓRICO DE PREÇOS
-            # ==========================
-            st.subheader("Histórico de Preços")
-
-            periodos = {
-                "1D": "1d", "5D": "5d", "1M": "1mo", "6M": "6mo",
-                "YTD": "ytd", "1Y": "1y", "5Y": "5y", "Max": "max"
-            }
-
-            if "periodo_selecionado" not in st.session_state:
-                st.session_state["periodo_selecionado"] = "6M"
-
-            colunas = st.columns(len(periodos))
-            for i, (p, v) in enumerate(periodos.items()):
-                with colunas[i]:
-                    if st.button(p, key=p):
-                        st.session_state["periodo_selecionado"] = p
-
-            periodo = periodos[st.session_state["periodo_selecionado"]]
-            dados = stock.history(period=periodo)
-
-            if dados.empty:
-                st.error("❌ Nenhum dado encontrado para esse código de ação.")
-            else:
-                fig_price = go.Figure()
-                fig_price.add_trace(go.Scatter(
-                    x=dados.index, 
-                    y=dados["Close"], 
-                    mode='lines',
-                    line=dict(color='#4285F4', width=2),
-                    fill='tozeroy',
-                    fillcolor='rgba(66, 133, 244, 0.2)'  
-                ))
-
-                min_price = dados["Close"].min()
-                max_price = dados["Close"].max()
-                fig_price.update_layout(
-                    template="plotly_dark",
-                    xaxis_title="",
-                    yaxis_title="Preço (R$)",
-                    margin=dict(l=40, r=40, t=40, b=40),
-                    font=dict(color="white"),
-                    xaxis=dict(showgrid=False),
-                    yaxis=dict(range=[min_price * 0.98, max_price * 1.02],
-                            showgrid=True, gridcolor="rgba(200, 200, 200, 0.2)"),
-                    plot_bgcolor="rgba(0,0,0,0)",
-                    paper_bgcolor="rgba(0,0,0,0)"
-                )
-
-                st.plotly_chart(fig_price)
-
-    except Exception as e:
-        st.error(f"❌ Erro ao buscar os dados da ação: {str(e)}")
+            st.write(f"✅ **{ticker} pagou dividendos em todos os últimos 10 anos.**")
+    else:
+        st.warning(f"⚠️ Nenhuma informação de dividendos encontrada para {ticker}.")
