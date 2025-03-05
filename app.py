@@ -34,17 +34,34 @@ st.markdown("""
             background: #666;
             margin: 10px 0 10px 0;
         }
+        .period-selector {
+            font-size: 16px;
+            font-weight: 600;
+            color: #ccc;
+            text-align: center;
+            margin: 10px 0;
+        }
+        .selected-period {
+            color: #4285F4;
+            border-bottom: 3px solid #4285F4;
+            padding-bottom: 2px;
+        }
+        .sector-text {
+            font-size: 18px;
+            font-weight: 500;
+            color: white;
+        }
     </style>
 """, unsafe_allow_html=True)
 
 # Título do dashboard
-st.title("📊 Dashboard da Ação")
+st.title("Dashboard da Ação")
 
 # Entrada do usuário
 ticker_input = st.text_input("Digite o código da ação (ex: AAPL, TSLA, PETR4.SA):")
 
 if ticker_input:
-    ticker = ticker_input
+    ticker = ticker_input.upper()
     if not ticker.endswith(".SA") and len(ticker) == 5:
         ticker += ".SA"
 
@@ -53,21 +70,57 @@ if ticker_input:
     dados = stock.history(period="10y")
 
     # Buscar setor da empresa
-    setor = stock.info.get("sector", "Setor não encontrado")
-    st.subheader(f"🏢 Setor da Empresa - {ticker}")
-    st.write(f"📌 {setor}")
+    setor_en = stock.info.get("sector", "Setor não encontrado")
+
+    # Tradução do setor para português
+    setores_traduzidos = {
+        "Consumer Cyclical": "Consumo Cíclico",
+        "Financial Services": "Serviços Financeiros",
+        "Technology": "Tecnologia",
+        "Industrials": "Indústria",
+        "Healthcare": "Saúde",
+        "Basic Materials": "Materiais Básicos",
+        "Consumer Defensive": "Consumo Defensivo",
+        "Utilities": "Serviços Públicos",
+        "Energy": "Energia",
+        "Real Estate": "Imóveis",
+        "Communication Services": "Serviços de Comunicação"
+    }
+    setor_pt = setores_traduzidos.get(setor_en, setor_en)  # Mantém em inglês se não encontrar tradução
+
+    # Exibir nome da ação e setor corretamente
+    st.subheader(ticker)
+    st.markdown(f'<div class="sector-text">Setor: {setor_pt}</div>', unsafe_allow_html=True)
 
     # =====================================
-    # 📌 PARTE 01 - HISTÓRICO DE PREÇOS
+    # HISTÓRICO DE PREÇOS
     # =====================================
-    st.subheader(f"📈 Histórico de Preços - {ticker}")
-    
+    st.subheader(f"Histórico de Preços")
+
     # Botões de período
-    periodos = {"1D": "1d", "5D": "5d", "1M": "1mo", "6M": "6mo", "YTD": "ytd", "1Y": "1y", "5Y": "5y", "Max": "max"}
-    periodo_selecionado = st.radio("Escolha o período:", list(periodos.keys()), index=3, horizontal=True)
-    periodo = periodos[periodo_selecionado]
-    
+    periodos = {
+        "1D": "1d", "5D": "5d", "1M": "1mo", "6M": "6mo",
+        "YTD": "ytd", "1Y": "1y", "5Y": "5y", "Max": "max"
+    }
+
+    # Criando a linha de seleção de período
+    periodo_keys = list(periodos.keys())
+    periodo_selecionado = st.session_state.get("periodo_selecionado", "6M")
+
+    # Criando linha de período customizada em HTML
+    periodo_html = '<div class="period-selector">'
+    for p in periodo_keys:
+        if p == periodo_selecionado:
+            periodo_html += f'<span class="selected-period">{p}</span> | '
+        else:
+            periodo_html += f'<span>{p}</span> | '
+    periodo_html = periodo_html.rstrip(" | ")  # Remove o último "|"
+    periodo_html += '</div>'
+
+    st.markdown(periodo_html, unsafe_allow_html=True)
+
     # Atualizar os dados com base no período
+    periodo = periodos[periodo_selecionado]
     dados = stock.history(period=periodo)
 
     # Criar gráfico no estilo Google Finance
@@ -78,7 +131,7 @@ if ticker_input:
         mode='lines',
         line=dict(color='#4285F4', width=2)
     ))
-    
+
     fig_price.update_layout(
         template="plotly_white",
         xaxis_title="",
@@ -90,5 +143,5 @@ if ticker_input:
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)"
     )
-    
+
     st.plotly_chart(fig_price)
