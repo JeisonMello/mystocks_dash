@@ -66,8 +66,12 @@ if ticker_input:
     stock = yf.Ticker(ticker)
     dados = stock.history(period="10y")
 
-    # Buscar setor da empresa (em inglês)
+    # Buscar setor da empresa (correção para ITSA4)
     setor_en = stock.info.get("sector", "Sector not found")
+    
+    # Corrigindo manualmente para ITSA4
+    if ticker == "ITSA4.SA":
+        setor_en = "Financial Services"
 
     # Exibir nome da ação e setor corretamente
     st.subheader(ticker)
