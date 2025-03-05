@@ -15,8 +15,8 @@ st.markdown("""
             font-size: 16px;
             font-weight: 600;
             color: #ccc;
-            text-align: center;
-            margin: 10px 10px 20px 10px;
+            text-align: left;  /* Alinhado à esquerda */
+            margin: 10px 10px 20px 0px;
         }
         .period-selector span {
             padding: 6px 12px;
@@ -39,9 +39,12 @@ st.markdown("""
         }
         /* Responsividade */
         @media screen and (max-width: 600px) {
+            .period-selector {
+                text-align: center;
+            }
             .period-selector span {
-                display: block;
-                padding: 4px 0;
+                display: inline-block;
+                padding: 4px 5px;
             }
         }
     </style>
@@ -62,28 +65,12 @@ if ticker_input:
     stock = yf.Ticker(ticker)
     dados = stock.history(period="10y")
 
-    # Buscar setor da empresa
-    setor_en = stock.info.get("sector", "Setor não encontrado")
-
-    # Tradução do setor para português
-    setores_traduzidos = {
-        "Consumer Cyclical": "Consumo Cíclico",
-        "Financial Services": "Serviços Financeiros",
-        "Technology": "Tecnologia",
-        "Industrials": "Indústria",
-        "Healthcare": "Saúde",
-        "Basic Materials": "Materiais Básicos",
-        "Consumer Defensive": "Consumo Defensivo",
-        "Utilities": "Serviços Públicos",
-        "Energy": "Energia",
-        "Real Estate": "Imóveis",
-        "Communication Services": "Serviços de Comunicação"
-    }
-    setor_pt = setores_traduzidos.get(setor_en, setor_en)  # Mantém em inglês se não encontrar tradução
+    # Buscar setor da empresa (agora em inglês, sem tradução)
+    setor_en = stock.info.get("sector", "Sector not found")
 
     # Exibir nome da ação e setor corretamente
     st.subheader(ticker)
-    st.markdown(f'<div class="sector-text">Setor: {setor_pt}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="sector-text">Sector: {setor_en}</div>', unsafe_allow_html=True)
 
     # =====================================
     # HISTÓRICO DE PREÇOS
@@ -100,18 +87,12 @@ if ticker_input:
     if "periodo_selecionado" not in st.session_state:
         st.session_state["periodo_selecionado"] = "6M"
 
-    # Criando linha de período customizada em HTML
-    periodo_html = '<div class="period-selector">'
-    for p in periodos.keys():
-        if p == st.session_state["periodo_selecionado"]:
-            periodo_html += f'<span class="selected-period">{p}</span> | '
-        else:
-            periodo_html += f'<span onclick="selectPeriodo(\'{p}\')">{p}</span> | '
-    periodo_html = periodo_html.rstrip(" | ")  # Remove o último "|"
-    periodo_html += '</div>'
-
-    # Exibir os períodos corretamente
-    st.markdown(periodo_html, unsafe_allow_html=True)
+    # Criando os botões interativos usando Streamlit
+    colunas = st.columns(len(periodos))  # Criar colunas para cada período
+    for i, (p, v) in enumerate(periodos.items()):
+        with colunas[i]:  # Criando botões interativos
+            if st.button(p, key=f"period_{p}"):
+                st.session_state["periodo_selecionado"] = p
 
     # Atualizar os dados com base no período selecionado
     periodo = periodos[st.session_state["periodo_selecionado"]]
@@ -123,7 +104,9 @@ if ticker_input:
         x=dados.index, 
         y=dados["Close"], 
         mode='lines',
-        line=dict(color='#4285F4', width=2)
+        line=dict(color='#4285F4', width=2),
+        fill='tozeroy',  # Efeito de preenchimento como no Google Finance
+        fillcolor='rgba(66, 133, 244, 0.2)'  
     ))
 
     fig_price.update_layout(
