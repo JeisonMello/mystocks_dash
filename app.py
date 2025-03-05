@@ -3,7 +3,7 @@ import yfinance as yf
 import pandas as pd
 import plotly.graph_objects as go
 
-# Estilização CSS para alinhar com o Google Finance
+# Estilização CSS para remover aparência de botão e alinhar com Google Finance
 st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
@@ -40,14 +40,18 @@ st.markdown("""
             font-weight: 500;
             color: white;
         }
-        /* Responsividade */
-        @media screen and (max-width: 600px) {
-            .period-container {
-                flex-wrap: wrap;
-            }
-            .period-selector {
-                padding: 6px;
-            }
+        /* Remover borda dos botões abaixo */
+        .invisible-button button {
+            background: none !important;
+            border: none !important;
+            color: #ccc !important;
+            font-size: 16px !important;
+            font-weight: 600 !important;
+            padding: 6px 12px !important;
+            cursor: pointer;
+        }
+        .invisible-button button:hover {
+            color: #ffffff !important;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -103,35 +107,12 @@ if ticker_input:
     # Exibir os períodos corretamente
     st.markdown(periodo_html, unsafe_allow_html=True)
 
-    # Captura de cliques para alterar o período (simulando evento do frontend)
-    period_selected = st.session_state["periodo_selecionado"]
-
-    # Criando botões invisíveis para capturar cliques corretamente
-    col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
-    with col1:
-        if st.button("1D", key="1D"):
-            st.session_state["periodo_selecionado"] = "1D"
-    with col2:
-        if st.button("5D", key="5D"):
-            st.session_state["periodo_selecionado"] = "5D"
-    with col3:
-        if st.button("1M", key="1M"):
-            st.session_state["periodo_selecionado"] = "1M"
-    with col4:
-        if st.button("6M", key="6M"):
-            st.session_state["periodo_selecionado"] = "6M"
-    with col5:
-        if st.button("YTD", key="YTD"):
-            st.session_state["periodo_selecionado"] = "YTD"
-    with col6:
-        if st.button("1Y", key="1Y"):
-            st.session_state["periodo_selecionado"] = "1Y"
-    with col7:
-        if st.button("5Y", key="5Y"):
-            st.session_state["periodo_selecionado"] = "5Y"
-    with col8:
-        if st.button("Max", key="Max"):
-            st.session_state["periodo_selecionado"] = "Max"
+    # Criando uma segunda barra interativa sem aparência de botão
+    cols = st.columns(8)
+    for idx, (p, v) in enumerate(periodos.items()):
+        with cols[idx]:
+            if st.button(p, key=p, help=f"Visualizar dados de {p}", args=(p,), use_container_width=True):
+                st.session_state["periodo_selecionado"] = p
 
     # Atualizar os dados com base no período selecionado
     periodo = periodos[st.session_state["periodo_selecionado"]]
@@ -149,19 +130,4 @@ if ticker_input:
     ))
 
     # Ajustar eixo Y automaticamente para não começar em zero
-    min_price = dados["Close"].min()
-    max_price = dados["Close"].max()
-    fig_price.update_layout(
-        template="plotly_dark",
-        xaxis_title="",
-        yaxis_title="Preço (R$)",
-        margin=dict(l=40, r=40, t=40, b=40),
-        font=dict(color="white"),
-        xaxis=dict(showgrid=False),
-        yaxis=dict(range=[min_price * 0.98, max_price * 1.02],  # Ajusta o range para evitar zero
-                   showgrid=True, gridcolor="rgba(200, 200, 200, 0.2)"),
-        plot_bgcolor="rgba(0,0,0,0)",
-        paper_bgcolor="rgba(0,0,0,0)"
-    )
-
-    st.plotly_chart(fig_price)
+   
