@@ -40,15 +40,6 @@ st.markdown("""
             font-weight: 500;
             color: white;
         }
-        /* Responsividade */
-        @media screen and (max-width: 600px) {
-            .period-container {
-                flex-wrap: wrap;
-            }
-            .period-selector {
-                padding: 6px;
-            }
-        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -63,73 +54,75 @@ if ticker_input:
     if not ticker.endswith(".SA") and len(ticker) == 5:
         ticker += ".SA"
 
-    # Buscar dados da ação
-    stock = yf.Ticker(ticker)
+    # Buscar dados da ação com tratamento de erro
+    try:
+        stock = yf.Ticker(ticker)
+        stock_info = stock.info  # Captura as informações da ação
 
-    # Buscar setor da empresa (correção para ITSA4)
-    setor_en = stock.info.get("sector", "Sector not found")
-    
-    # Corrigindo manualmente para ITSA4
-    if ticker == "ITSA4.SA":
-        setor_en = "Financial Services"
+        if "longName" not in stock_info:
+            st.error("❌ Ação não encontrada! Verifique o código e tente novamente.")
+        else:
+            # Exibir nome e setor da empresa
+            company_name = stock_info.get("longName", ticker)
+            setor_en = stock_info.get("sector", "Setor não disponível")
 
-    # Exibir nome da ação e setor corretamente
-    st.subheader(ticker)
-    st.markdown(f'<div class="sector-text">Setor: {setor_en}</div>', unsafe_allow_html=True)
+            st.subheader(company_name)
+            st.markdown(f'<div class="sector-text">Setor: {setor_en}</div>', unsafe_allow_html=True)
 
-    # ==========================
-    # HISTÓRICO DE PREÇOS
-    # ==========================
-    st.subheader("Histórico de Preços")
+            # ==========================
+            # HISTÓRICO DE PREÇOS
+            # ==========================
+            st.subheader("Histórico de Preços")
 
-    # Definição dos períodos disponíveis
-    periodos = {
-        "1D": "1d", "5D": "5d", "1M": "1mo", "6M": "6mo",
-        "YTD": "ytd", "1Y": "1y", "5Y": "5y", "Max": "max"
-    }
+            # Definição dos períodos disponíveis
+            periodos = {
+                "1D": "1d", "5D": "5d", "1M": "1mo", "6M": "6mo",
+                "YTD": "ytd", "1Y": "1y", "5Y": "5y", "Max": "max"
+            }
 
-    # Estado da seleção do período
-    if "periodo_selecionado" not in st.session_state:
-        st.session_state["periodo_selecionado"] = "6M"
+            # Estado da seleção do período
+            if "periodo_selecionado" not in st.session_state:
+                st.session_state["periodo_selecionado"] = "6M"
 
-    # Criando a barra de seleção visual e funcional
-    selected_period = st.session_state["periodo_selecionado"]
+            # Criando a barra de seleção visual e funcional
+            colunas = st.columns(len(periodos))
+            for i, (p, v) in enumerate(periodos.items()):
+                with colunas[i]:
+                    if st.button(p, key=p):
+                        st.session_state["periodo_selecionado"] = p
 
-    colunas = st.columns(len(periodos))
-    for i, (p, v) in enumerate(periodos.items()):
-        with colunas[i]:
-            if st.button(p, key=p):
-                st.session_state["periodo_selecionado"] = p
+            # Atualizar os dados com base no período selecionado
+            periodo = periodos[st.session_state["periodo_selecionado"]]
+            dados = stock.history(period=periodo)
 
-    # Atualizar os dados com base no período selecionado
-    periodo = periodos[st.session_state["periodo_selecionado"]]
-    dados = stock.history(period=periodo)
+            # Criar gráfico no estilo Google Finance
+            fig_price = go.Figure()
+            fig_price.add_trace(go.Scatter(
+                x=dados.index, 
+                y=dados["Close"], 
+                mode='lines',
+                line=dict(color='#4285F4', width=2),
+                fill='tozeroy',
+                fillcolor='rgba(66, 133, 244, 0.2)'  
+            ))
 
-    # Criar gráfico no estilo Google Finance
-    fig_price = go.Figure()
-    fig_price.add_trace(go.Scatter(
-        x=dados.index, 
-        y=dados["Close"], 
-        mode='lines',
-        line=dict(color='#4285F4', width=2),
-        fill='tozeroy',
-        fillcolor='rgba(66, 133, 244, 0.2)'  
-    ))
+            # Ajustar eixo Y automaticamente para não começar em zero
+            min_price = dados["Close"].min()
+            max_price = dados["Close"].max()
+            fig_price.update_layout(
+                template="plotly_dark",
+                xaxis_title="",
+                yaxis_title="Preço (R$)",
+                margin=dict(l=40, r=40, t=40, b=40),
+                font=dict(color="white"),
+                xaxis=dict(showgrid=False),
+                yaxis=dict(range=[min_price * 0.98, max_price * 1.02],
+                        showgrid=True, gridcolor="rgba(200, 200, 200, 0.2)"),
+                plot_bgcolor="rgba(0,0,0,0)",
+                paper_bgcolor="rgba(0,0,0,0)"
+            )
 
-    # Ajustar eixo Y automaticamente para não começar em zero
-    min_price = dados["Close"].min()
-    max_price = dados["Close"].max()
-    fig_price.update_layout(
-        template="plotly_dark",
-        xaxis_title="",
-        yaxis_title="Preço (R$)",
-        margin=dict(l=40, r=40, t=40, b=40),
-        font=dict(color="white"),
-        xaxis=dict(showgrid=False),
-        yaxis=dict(range=[min_price * 0.98, max_price * 1.02],
-                   showgrid=True, gridcolor="rgba(200, 200, 200, 0.2)"),
-        plot_bgcolor="rgba(0,0,0,0)",
-        paper_bgcolor="rgba(0,0,0,0)"
-    )
+            st.plotly_chart(fig_price)
 
-    st.plotly_chart(fig_price)
+    except Exception as e:
+        st.error("❌ Ocorreu um erro ao buscar os dados da ação. Verifique o código e tente novamente.")
