@@ -11,20 +11,22 @@ st.markdown("""
         body {
             font-family: 'Inter', sans-serif;
         }
+        .period-container {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
         .period-selector {
             font-size: 16px;
             font-weight: 600;
             color: #ccc;
-            text-align: left;  /* Alinhado à esquerda */
-            margin: 10px 10px 20px 0px;
-        }
-        .period-selector span {
-            padding: 6px 12px;
             cursor: pointer;
+            padding: 8px 12px;
             transition: color 0.2s ease-in-out, border-bottom 0.2s ease-in-out;
-            display: inline-block;
         }
-        .period-selector span:hover {
+        .period-selector:hover {
             color: #ffffff;
         }
         .selected-period {
@@ -39,12 +41,11 @@ st.markdown("""
         }
         /* Responsividade */
         @media screen and (max-width: 600px) {
-            .period-selector {
-                text-align: center;
+            .period-container {
+                flex-wrap: wrap;
             }
-            .period-selector span {
-                display: inline-block;
-                padding: 4px 5px;
+            .period-selector {
+                padding: 6px;
             }
         }
     </style>
@@ -65,7 +66,7 @@ if ticker_input:
     stock = yf.Ticker(ticker)
     dados = stock.history(period="10y")
 
-    # Buscar setor da empresa (agora em inglês, sem tradução)
+    # Buscar setor da empresa (em inglês)
     setor_en = stock.info.get("sector", "Sector not found")
 
     # Exibir nome da ação e setor corretamente
@@ -87,12 +88,16 @@ if ticker_input:
     if "periodo_selecionado" not in st.session_state:
         st.session_state["periodo_selecionado"] = "6M"
 
-    # Criando os botões interativos usando Streamlit
-    colunas = st.columns(len(periodos))  # Criar colunas para cada período
-    for i, (p, v) in enumerate(periodos.items()):
-        with colunas[i]:  # Criando botões interativos
-            if st.button(p, key=f"period_{p}"):
-                st.session_state["periodo_selecionado"] = p
+    # Criando o layout correto do seletor de período
+    periodo_html = '<div class="period-container">'
+    for p in periodos.keys():
+        selected_class = "selected-period" if p == st.session_state["periodo_selecionado"] else ""
+        periodo_html += f'<span class="period-selector {selected_class}" onclick="set_periodo(\'{p}\')">{p}</span> | '
+    periodo_html = periodo_html.rstrip(" | ")  # Remove o último "|"
+    periodo_html += '</div>'
+
+    # Exibir os períodos corretamente
+    st.markdown(periodo_html, unsafe_allow_html=True)
 
     # Atualizar os dados com base no período selecionado
     periodo = periodos[st.session_state["periodo_selecionado"]]
@@ -109,6 +114,9 @@ if ticker_input:
         fillcolor='rgba(66, 133, 244, 0.2)'  
     ))
 
+    # Ajustar eixo Y automaticamente para não começar em zero
+    min_price = dados["Close"].min()
+    max_price = dados["Close"].max()
     fig_price.update_layout(
         template="plotly_dark",
         xaxis_title="",
@@ -116,7 +124,8 @@ if ticker_input:
         margin=dict(l=40, r=40, t=40, b=40),
         font=dict(color="white"),
         xaxis=dict(showgrid=False),
-        yaxis=dict(showgrid=True, gridcolor="rgba(200, 200, 200, 0.2)"),
+        yaxis=dict(range=[min_price * 0.98, max_price * 1.02],  # Ajusta o range para evitar zero
+                   showgrid=True, gridcolor="rgba(200, 200, 200, 0.2)"),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)"
     )
