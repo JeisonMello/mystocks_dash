@@ -2,7 +2,7 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd
 import plotly.graph_objects as go
-from yahooquery import search  # API do Yahoo Finance para busca automática
+from yahooquery import search  # Corrigido: Importação correta para busca automática
 
 # Estilização CSS para alinhar com o Google Finance
 st.markdown("""
@@ -59,7 +59,7 @@ if ticker_input:
     try:
         # Fazer a busca no Yahoo Finance
         resultados = search(ticker_input)
-        
+
         # Verifica se encontrou algo
         if "quotes" in resultados and resultados["quotes"]:
             opcoes = {r["symbol"]: r["shortname"] for r in resultados["quotes"]}
@@ -71,22 +71,20 @@ if ticker_input:
             st.error("❌ Nenhuma empresa encontrada. Tente outro nome ou código.")
             ticker = None
     except Exception as e:
-        st.error("❌ Erro ao buscar empresas. Tente novamente.")
+        st.error(f"❌ Erro ao buscar empresas: {str(e)}")
         ticker = None
 else:
     ticker = None
 
 # Se tivermos um ticker válido, continuar com a busca de dados
 if ticker:
-    # Buscar dados da ação com tratamento de erro
     try:
         stock = yf.Ticker(ticker)
-        stock_info = stock.info  # Captura as informações da ação
+        stock_info = stock.info  
 
         if "longName" not in stock_info:
             st.error("❌ Ação não encontrada! Verifique o código e tente novamente.")
         else:
-            # Exibir nome e setor da empresa
             company_name = stock_info.get("longName", ticker)
             setor_en = stock_info.get("sector", "Setor não disponível")
 
@@ -98,28 +96,23 @@ if ticker:
             # ==========================
             st.subheader("Histórico de Preços")
 
-            # Definição dos períodos disponíveis
             periodos = {
                 "1D": "1d", "5D": "5d", "1M": "1mo", "6M": "6mo",
                 "YTD": "ytd", "1Y": "1y", "5Y": "5y", "Max": "max"
             }
 
-            # Estado da seleção do período
             if "periodo_selecionado" not in st.session_state:
                 st.session_state["periodo_selecionado"] = "6M"
 
-            # Criando a barra de seleção visual e funcional
             colunas = st.columns(len(periodos))
             for i, (p, v) in enumerate(periodos.items()):
                 with colunas[i]:
                     if st.button(p, key=p):
                         st.session_state["periodo_selecionado"] = p
 
-            # Atualizar os dados com base no período selecionado
             periodo = periodos[st.session_state["periodo_selecionado"]]
             dados = stock.history(period=periodo)
 
-            # Criar gráfico no estilo Google Finance
             fig_price = go.Figure()
             fig_price.add_trace(go.Scatter(
                 x=dados.index, 
@@ -130,7 +123,6 @@ if ticker:
                 fillcolor='rgba(66, 133, 244, 0.2)'  
             ))
 
-            # Ajustar eixo Y automaticamente para não começar em zero
             min_price = dados["Close"].min()
             max_price = dados["Close"].max()
             fig_price.update_layout(
@@ -149,4 +141,4 @@ if ticker:
             st.plotly_chart(fig_price)
 
     except Exception as e:
-        st.error("❌ Ocorreu um erro ao buscar os dados da ação. Verifique o código e tente novamente.")
+        st.error(f"❌ Erro ao buscar os dados da ação: {str(e)}")
