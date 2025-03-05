@@ -27,6 +27,17 @@ st.markdown("""
             color: #EA4335 !important;
             font-size: 20px !important;
         }
+        .period-selector {
+            font-size: 16px !important;
+            color: #cccccc !important;
+            padding: 6px 15px !important;
+            text-transform: none !important;
+        }
+        .active-period {
+            color: #4285F4 !important;
+            font-weight: bold !important;
+            border-bottom: 2px solid #4285F4 !important;
+        }
         hr {
             border: 0;
             height: 1px;
@@ -49,7 +60,26 @@ if ticker_input:
 
     # Buscar dados da ação
     stock = yf.Ticker(ticker)
-    dados = stock.history(period="10y")
+    
+    # 📌 Seleção de período igual ao Google Finance
+    periodos = {
+        "1D": "1d", "5D": "5d", "1M": "1mo", "6M": "6mo",
+        "YTD": "ytd", "1Y": "1y", "5Y": "5y", "Max": "max"
+    }
+    
+    periodo_selecionado = "6M"  # Padrão: últimos 6 meses
+
+    # Exibição dos períodos como no Google Finance
+    st.markdown(
+        " | ".join(
+            [f"<span class='active-period'>{p}</span>" if p == "6M" else f"<span class='period-selector'>{p}</span>"
+             for p in periodos.keys()]
+        ),
+        unsafe_allow_html=True
+    )
+
+    # Buscar histórico de preços da ação
+    dados = stock.history(period=periodos[periodo_selecionado])
 
     # Buscar preço atual
     preco_atual = dados["Close"].iloc[-1]
@@ -68,13 +98,8 @@ if ticker_input:
     # =====================================
     # 📌 PARTE 01 - HISTÓRICO DE PREÇOS
     # =====================================
-
+    
     st.subheader(f"📈 Histórico de Preços - {ticker}")
-
-    # Ajustar a escala do gráfico para não começar em zero
-    min_preco = dados["Close"].min() * 0.98  # Ajusta um pouco abaixo do mínimo
-    max_preco = dados["Close"].max() * 1.02  # Ajusta um pouco acima do máximo
-
     fig_price = go.Figure()
 
     fig_price.add_trace(go.Scatter(
@@ -89,36 +114,27 @@ if ticker_input:
     fig_price.update_layout(
         template="plotly_white",
         title=f"Evolução do Preço - {ticker}",
-        xaxis_title="",  # Remove a legenda "Ano"
+        xaxis_title="Ano",
         yaxis_title="Preço (R$)",
         margin=dict(l=40, r=40, t=40, b=40),
         plot_bgcolor="rgba(0,0,0,0)",  # Fundo transparente
         paper_bgcolor="rgba(0,0,0,0)",  # Fundo da área do gráfico
         font=dict(color="white"),  # Texto branco
         xaxis=dict(showgrid=False),  # Remove grade vertical
-        yaxis=dict(showgrid=True, gridcolor="rgba(200, 200, 200, 0.2)", range=[min_preco, max_preco])  # Ajusta a escala do eixo Y
+        yaxis=dict(showgrid=True, gridcolor="rgba(200, 200, 200, 0.2)")  # Grade cinza suave
     )
 
     st.plotly_chart(fig_price)
 
     # =====================================
-    # 📌 PARTE 02 - DIVIDENDOS ANUAIS (CORRIGIDO)
+    # 📌 PARTE 02 - DIVIDENDOS ANUAIS
     # =====================================
 
     st.subheader(f"💰 Dividendos Anuais - {ticker}")
-
     if not stock.dividends.empty:
         stock.dividends.index = pd.to_datetime(stock.dividends.index)
-        dividendos = stock.dividends.resample("Y").sum().tail(10)  # PEGANDO OS ÚLTIMOS 10 ANOS
+        dividendos = stock.dividends.resample("Y").sum().tail(10)
 
-        # 📌 Garantir que todos os anos tenham valores (mesmo que seja 0)
-        ano_inicio = dividendos.index.min()
-        ano_atual = pd.Timestamp.today().year
-        anos_completos = pd.Series(0, index=range(ano_inicio, ano_atual + 1))
-        dividendos.index = dividendos.index.year
-        dividendos = anos_completos.add(dividendos, fill_value=0)
-
-        # 📌 Calcular o percentual de dividendos em relação ao preço médio do ano
         preco_medio_anual = stock.history(period="10y")["Close"].resample("Y").mean()
         preco_medio_anual.index = preco_medio_anual.index.year
         preco_medio_anual = preco_medio_anual.reindex(dividendos.index, fill_value=1)
@@ -126,9 +142,7 @@ if ticker_input:
 
         dividend_yield = dividend_yield.replace([float("inf"), -float("inf")], 0).fillna(0)
 
-        # Criar gráfico correto de barras, um para cada ano
         fig_divid = go.Figure()
-
         fig_divid.add_trace(go.Bar(
             x=dividend_yield.index,
             y=dividend_yield,
@@ -140,7 +154,7 @@ if ticker_input:
         fig_divid.update_layout(
             template="plotly_dark",
             title=f"Dividend Yield - Últimos 10 Anos ({ticker})",
-            xaxis_title="Ano",  # Certifique-se de manter a legenda correta para os anos
+            xaxis_title="Ano",
             yaxis_title="Yield (%)",
             margin=dict(l=40, r=40, t=40, b=40),
             font=dict(color="white")
