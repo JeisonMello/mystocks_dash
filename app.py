@@ -92,27 +92,23 @@ if ticker_input:
     if "periodo_selecionado" not in st.session_state:
         st.session_state["periodo_selecionado"] = "6M"
 
-    # Criando a barra de seleção visual
+    # Criando a barra de seleção visual (sem botões extras)
+    selected_period = st.session_state["periodo_selecionado"]
+    
+    # Criando a barra de seleção interativa
     periodo_html = '<div class="period-container">'
     for p, v in periodos.items():
-        selected_class = "selected-period" if p == st.session_state["periodo_selecionado"] else ""
-        periodo_html += f'<span class="period-selector {selected_class}" onclick="set_periodo(\'{p}\')">{p}</span> | '
+        selected_class = "selected-period" if p == selected_period else ""
+        periodo_html += f'<span class="period-selector {selected_class}" onclick="window.location.search=\'?period={p}\'">{p}</span> | '
     periodo_html = periodo_html.rstrip(" | ")
     periodo_html += '</div>'
 
     st.markdown(periodo_html, unsafe_allow_html=True)
 
-    # Captura de cliques e atualização do período via Streamlit (sem necessidade de JavaScript)
-    period_selected = st.query_params.get("period", [st.session_state["periodo_selecionado"]])[0]
-    if period_selected in periodos:
-        st.session_state["periodo_selecionado"] = period_selected
-
-    # --- Criando botões invisíveis para capturar cliques corretamente ---
-    colunas = st.columns(len(periodos))
-    for i, (p, v) in enumerate(periodos.items()):
-        with colunas[i]:
-            if st.button(p, key=p):
-                st.session_state["periodo_selecionado"] = p
+    # Captura da seleção correta via query params
+    params = st.query_params
+    if "period" in params and params["period"] in periodos:
+        st.session_state["periodo_selecionado"] = params["period"]
 
     # Atualizar os dados com base no período selecionado
     periodo = periodos[st.session_state["periodo_selecionado"]]
