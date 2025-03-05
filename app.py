@@ -1,3 +1,4 @@
+
 import streamlit as st
 import yfinance as yf
 import pandas as pd
@@ -25,6 +26,7 @@ st.markdown("""
             cursor: pointer;
             padding: 8px 12px;
             transition: color 0.2s ease-in-out, border-bottom 0.2s ease-in-out;
+            user-select: none;
         }
         .period-selector:hover {
             color: #ffffff;
@@ -91,13 +93,35 @@ if ticker_input:
     if "periodo_selecionado" not in st.session_state:
         st.session_state["periodo_selecionado"] = "6M"
 
-    # Criando a barra de seleção com botões funcionais
-    colunas = st.columns(len(periodos))  # Criando colunas para espaçamento correto
-    for i, (p, v) in enumerate(periodos.items()):
-        with colunas[i]:  # Criando a área de clique correta
-            if st.button(p, key=f"period_{p}"):
-                st.session_state["periodo_selecionado"] = p
-                st.rerun()  # Força a atualização do gráfico ao clicar no período
+    # Criando a barra de seleção com área clicável real
+    periodo_html = '<div class="period-container">'
+    for p, v in periodos.items():
+        selected_class = "selected-period" if p == st.session_state["periodo_selecionado"] else ""
+        periodo_html += f'<span class="period-selector {selected_class}" onclick="set_periodo(\'{p}\')">{p}</span> | '
+    periodo_html = periodo_html.rstrip(" | ")  # Remove o último "|"
+    periodo_html += '</div>'
+
+    # Exibir os períodos corretamente
+    st.markdown(periodo_html, unsafe_allow_html=True)
+
+    # Captura de cliques no frontend para alterar o período
+    st.markdown("""
+        <script>
+            function set_periodo(period) {
+                document.getElementById("hidden_period").value = period;
+                document.getElementById("hidden_form").submit();
+            }
+        </script>
+        <form id="hidden_form">
+            <input type="hidden" id="hidden_period" name="period">
+        </form>
+    """, unsafe_allow_html=True)
+
+    # Captura do período selecionado via formulário oculto
+    period_selected = st.experimental_get_query_params().get("period", [st.session_state["periodo_selecionado"]])[0]
+
+    if period_selected in periodos:
+        st.session_state["periodo_selecionado"] = period_selected
 
     # Atualizar os dados com base no período selecionado
     periodo = periodos[st.session_state["periodo_selecionado"]]
