@@ -116,8 +116,8 @@ if ticker_input:
         </form>
     """, unsafe_allow_html=True)
 
-    # Captura do período selecionado via formulário oculto
-    period_selected = st.experimental_get_query_params().get("period", [st.session_state["periodo_selecionado"]])[0]
+    # Captura do período selecionado via query_params atualizado
+    period_selected = st.query_params.get("period", [st.session_state["periodo_selecionado"]])[0]
 
     if period_selected in periodos:
         st.session_state["periodo_selecionado"] = period_selected
