@@ -16,12 +16,13 @@ st.markdown("""
             font-weight: 600;
             color: #ccc;
             text-align: center;
-            margin: 10px 0;
+            margin: 10px 10px 20px 10px;
         }
         .period-selector span {
-            padding: 6px 10px;
+            padding: 6px 12px;
             cursor: pointer;
             transition: color 0.2s ease-in-out, border-bottom 0.2s ease-in-out;
+            display: inline-block;
         }
         .period-selector span:hover {
             color: #ffffff;
@@ -35,6 +36,13 @@ st.markdown("""
             font-size: 18px;
             font-weight: 500;
             color: white;
+        }
+        /* Responsividade */
+        @media screen and (max-width: 600px) {
+            .period-selector span {
+                display: block;
+                padding: 4px 0;
+            }
         }
     </style>
 """, unsafe_allow_html=True)
@@ -92,15 +100,18 @@ if ticker_input:
     if "periodo_selecionado" not in st.session_state:
         st.session_state["periodo_selecionado"] = "6M"
 
-    # Criando botões interativos de período
-    col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
-    cols = [col1, col2, col3, col4, col5, col6, col7, col8]
-    periodo_keys = list(periodos.keys())
+    # Criando linha de período customizada em HTML
+    periodo_html = '<div class="period-selector">'
+    for p in periodos.keys():
+        if p == st.session_state["periodo_selecionado"]:
+            periodo_html += f'<span class="selected-period">{p}</span> | '
+        else:
+            periodo_html += f'<span onclick="selectPeriodo(\'{p}\')">{p}</span> | '
+    periodo_html = periodo_html.rstrip(" | ")  # Remove o último "|"
+    periodo_html += '</div>'
 
-    for i, p in enumerate(periodo_keys):
-        with cols[i]:
-            if st.button(p, key=f"period_{p}"):
-                st.session_state["periodo_selecionado"] = p
+    # Exibir os períodos corretamente
+    st.markdown(periodo_html, unsafe_allow_html=True)
 
     # Atualizar os dados com base no período selecionado
     periodo = periodos[st.session_state["periodo_selecionado"]]
