@@ -6,8 +6,10 @@ import plotly.graph_objects as go
 # Estilização CSS para alinhar com o Google Finance
 st.markdown("""
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+        
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Inter', sans-serif;
         }
         div[data-testid="stButton"] > button {
             background-color: transparent !important;
