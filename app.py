@@ -3,7 +3,7 @@ import yfinance as yf
 import pandas as pd
 import plotly.graph_objects as go
 
-# Estilização CSS para remover aparência de botão e alinhar com Google Finance
+# Estilização CSS para alinhar com o Google Finance
 st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
@@ -40,18 +40,22 @@ st.markdown("""
             font-weight: 500;
             color: white;
         }
-        /* Remover borda dos botões abaixo */
-        .invisible-button button {
-            background: none !important;
-            border: none !important;
-            color: #ccc !important;
-            font-size: 16px !important;
-            font-weight: 600 !important;
-            padding: 6px 12px !important;
-            cursor: pointer;
+        /* Responsividade */
+        @media screen and (max-width: 600px) {
+            .period-container {
+                flex-wrap: wrap;
+            }
+            .period-selector {
+                padding: 6px;
+            }
         }
-        .invisible-button button:hover {
-            color: #ffffff !important;
+        /* Estilização para deixar os st.button invisíveis */
+        .stButton>button {
+            background-color: transparent;
+            border: none;
+            box-shadow: none;
+            color: transparent;
+            padding: 0;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -84,7 +88,7 @@ if ticker_input:
     # ==========================
     # HISTÓRICO DE PREÇOS
     # ==========================
-    st.subheader(f"Histórico de Preços")
+    st.subheader("Histórico de Preços")
 
     # Definição dos períodos disponíveis
     periodos = {
@@ -96,23 +100,60 @@ if ticker_input:
     if "periodo_selecionado" not in st.session_state:
         st.session_state["periodo_selecionado"] = "6M"
 
-    # Criando a barra de seleção com área clicável real
+    # Criando a barra de seleção com área clicável via HTML
     periodo_html = '<div class="period-container">'
     for p, v in periodos.items():
         selected_class = "selected-period" if p == st.session_state["periodo_selecionado"] else ""
         periodo_html += f'<span class="period-selector {selected_class}" onclick="set_periodo(\'{p}\')">{p}</span> | '
-    periodo_html = periodo_html.rstrip(" | ")  # Remove o último "|"
+    periodo_html = periodo_html.rstrip(" | ")
     periodo_html += '</div>'
 
-    # Exibir os períodos corretamente
     st.markdown(periodo_html, unsafe_allow_html=True)
 
-    # Criando uma segunda barra interativa sem aparência de botão
-    cols = st.columns(8)
-    for idx, (p, v) in enumerate(periodos.items()):
-        with cols[idx]:
-            if st.button(p, key=p, help=f"Visualizar dados de {p}", args=(p,), use_container_width=True):
-                st.session_state["periodo_selecionado"] = p
+    # Captura de cliques via JavaScript (utilizando form oculto)
+    st.markdown("""
+        <script>
+            function set_periodo(period) {
+                document.getElementById("hidden_period").value = period;
+                document.getElementById("hidden_form").submit();
+            }
+        </script>
+        <form id="hidden_form">
+            <input type="hidden" id="hidden_period" name="period">
+        </form>
+    """, unsafe_allow_html=True)
+
+    # Captura do período selecionado via query_params
+    period_selected = st.experimental_get_query_params().get("period", [st.session_state["periodo_selecionado"]])[0]
+    if period_selected in periodos:
+        st.session_state["periodo_selecionado"] = period_selected
+
+    # --- Botões invisíveis para garantir a funcionalidade de clique ---
+    col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
+    with col1:
+        if st.button("1D", key="1D"):
+            st.session_state["periodo_selecionado"] = "1D"
+    with col2:
+        if st.button("5D", key="5D"):
+            st.session_state["periodo_selecionado"] = "5D"
+    with col3:
+        if st.button("1M", key="1M"):
+            st.session_state["periodo_selecionado"] = "1M"
+    with col4:
+        if st.button("6M", key="6M"):
+            st.session_state["periodo_selecionado"] = "6M"
+    with col5:
+        if st.button("YTD", key="YTD"):
+            st.session_state["periodo_selecionado"] = "YTD"
+    with col6:
+        if st.button("1Y", key="1Y"):
+            st.session_state["periodo_selecionado"] = "1Y"
+    with col7:
+        if st.button("5Y", key="5Y"):
+            st.session_state["periodo_selecionado"] = "5Y"
+    with col8:
+        if st.button("Max", key="Max"):
+            st.session_state["periodo_selecionado"] = "Max"
 
     # Atualizar os dados com base no período selecionado
     periodo = periodos[st.session_state["periodo_selecionado"]]
@@ -125,9 +166,24 @@ if ticker_input:
         y=dados["Close"], 
         mode='lines',
         line=dict(color='#4285F4', width=2),
-        fill='tozeroy',  # Efeito de preenchimento como no Google Finance
+        fill='tozeroy',
         fillcolor='rgba(66, 133, 244, 0.2)'  
     ))
 
     # Ajustar eixo Y automaticamente para não começar em zero
-   
+    min_price = dados["Close"].min()
+    max_price = dados["Close"].max()
+    fig_price.update_layout(
+        template="plotly_dark",
+        xaxis_title="",
+        yaxis_title="Preço (R$)",
+        margin=dict(l=40, r=40, t=40, b=40),
+        font=dict(color="white"),
+        xaxis=dict(showgrid=False),
+        yaxis=dict(range=[min_price * 0.98, max_price * 1.02],
+                   showgrid=True, gridcolor="rgba(200, 200, 200, 0.2)"),
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)"
+    )
+
+    st.plotly_chart(fig_price)
