@@ -11,35 +11,20 @@ st.markdown("""
         body {
             font-family: 'Inter', sans-serif;
         }
-        div[data-testid="stButton"] > button {
-            background-color: transparent !important;
-            border: none !important;
-            color: #cccccc !important;
-            font-size: 16px !important;
-            font-weight: normal !important;
-            padding: 6px 15px !important;
-            text-transform: none !important;
-        }
-        div[data-testid="stButton"] > button:hover {
-            color: #ffffff !important;
-            border-bottom: 2px solid #4285F4 !important;
-        }
-        div[data-testid="stButton"] > button:focus {
-            color: #4285F4 !important;
-            border-bottom: 2px solid #4285F4 !important;
-        }
-        hr {
-            border: 0;
-            height: 1px;
-            background: #666;
-            margin: 10px 0 10px 0;
-        }
         .period-selector {
             font-size: 16px;
             font-weight: 600;
             color: #ccc;
             text-align: center;
             margin: 10px 0;
+        }
+        .period-selector span {
+            padding: 6px 10px;
+            cursor: pointer;
+            transition: color 0.2s ease-in-out, border-bottom 0.2s ease-in-out;
+        }
+        .period-selector span:hover {
+            color: #ffffff;
         }
         .selected-period {
             color: #4285F4;
@@ -97,30 +82,28 @@ if ticker_input:
     # =====================================
     st.subheader(f"Histórico de Preços")
 
-    # Botões de período
+    # Botões de período (agora interativos)
     periodos = {
         "1D": "1d", "5D": "5d", "1M": "1mo", "6M": "6mo",
         "YTD": "ytd", "1Y": "1y", "5Y": "5y", "Max": "max"
     }
 
-    # Criando a linha de seleção de período
+    # Estado da seleção do período
+    if "periodo_selecionado" not in st.session_state:
+        st.session_state["periodo_selecionado"] = "6M"
+
+    # Criando botões interativos de período
+    col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
+    cols = [col1, col2, col3, col4, col5, col6, col7, col8]
     periodo_keys = list(periodos.keys())
-    periodo_selecionado = st.session_state.get("periodo_selecionado", "6M")
 
-    # Criando linha de período customizada em HTML
-    periodo_html = '<div class="period-selector">'
-    for p in periodo_keys:
-        if p == periodo_selecionado:
-            periodo_html += f'<span class="selected-period">{p}</span> | '
-        else:
-            periodo_html += f'<span>{p}</span> | '
-    periodo_html = periodo_html.rstrip(" | ")  # Remove o último "|"
-    periodo_html += '</div>'
+    for i, p in enumerate(periodo_keys):
+        with cols[i]:
+            if st.button(p, key=f"period_{p}"):
+                st.session_state["periodo_selecionado"] = p
 
-    st.markdown(periodo_html, unsafe_allow_html=True)
-
-    # Atualizar os dados com base no período
-    periodo = periodos[periodo_selecionado]
+    # Atualizar os dados com base no período selecionado
+    periodo = periodos[st.session_state["periodo_selecionado"]]
     dados = stock.history(period=periodo)
 
     # Criar gráfico no estilo Google Finance
@@ -133,7 +116,7 @@ if ticker_input:
     ))
 
     fig_price.update_layout(
-        template="plotly_white",
+        template="plotly_dark",
         xaxis_title="",
         yaxis_title="Preço (R$)",
         margin=dict(l=40, r=40, t=40, b=40),
