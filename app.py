@@ -64,7 +64,6 @@ if ticker_input:
 
     # Buscar dados da ação
     stock = yf.Ticker(ticker)
-    dados = stock.history(period="10y")
 
     # Buscar setor da empresa (correção para ITSA4)
     setor_en = stock.info.get("sector", "Sector not found")
@@ -92,13 +91,13 @@ if ticker_input:
     if "periodo_selecionado" not in st.session_state:
         st.session_state["periodo_selecionado"] = "6M"
 
-    # Criando o layout correto do seletor de período com interação real
-    cols = st.columns(len(periodos))  # Criando colunas para espaçamento correto
-
+    # Criando a barra de seleção com botões funcionais
+    colunas = st.columns(len(periodos))  # Criando colunas para espaçamento correto
     for i, (p, v) in enumerate(periodos.items()):
-        with cols[i]:  # Criando a área de clique correta
+        with colunas[i]:  # Criando a área de clique correta
             if st.button(p, key=f"period_{p}"):
                 st.session_state["periodo_selecionado"] = p
+                st.rerun()  # Força a atualização do gráfico ao clicar no período
 
     # Atualizar os dados com base no período selecionado
     periodo = periodos[st.session_state["periodo_selecionado"]]
