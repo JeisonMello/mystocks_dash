@@ -9,32 +9,29 @@ st.markdown("""
         body {
             font-family: Arial, sans-serif;
         }
-        div[data-testid="stButton"] > button {
-            background-color: transparent !important;
-            border: none !important;
-            color: #cccccc !important;
-            font-size: 16px !important;
+        h2 {
+            font-size: 32px !important;
+            font-weight: bold !important;
+            margin-bottom: 0px !important;
+        }
+        .subtext {
+            font-size: 20px !important;
             font-weight: normal !important;
-            padding: 6px 15px !important;
-            text-transform: none !important;
+            color: #999999 !important;
         }
-        div[data-testid="stButton"] > button:hover {
-            color: #ffffff !important;
-            border-bottom: 2px solid #4285F4 !important;
+        .positive {
+            color: #34A853 !important;
+            font-size: 20px !important;
         }
-        div[data-testid="stButton"] > button:focus {
-            color: #4285F4 !important;
-            border-bottom: 2px solid #4285F4 !important;
+        .negative {
+            color: #EA4335 !important;
+            font-size: 20px !important;
         }
         hr {
             border: 0;
             height: 1px;
             background: #666;
             margin: 10px 0 10px 0;
-        }
-        h2 {
-            font-size: 24px !important;
-            font-weight: bold !important;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -54,10 +51,19 @@ if ticker_input:
     stock = yf.Ticker(ticker)
     dados = stock.history(period="10y")
 
-    # Buscar setor da empresa
-    setor = stock.info.get("sector", "Setor não encontrado")
-    st.subheader(f"🏢 Setor da Empresa - {ticker}")
-    st.write(f"📌 **{setor}**")
+    # Buscar preço atual
+    preco_atual = dados["Close"].iloc[-1]
+    preco_anterior = dados["Close"].iloc[0]
+    variacao = preco_atual - preco_anterior
+    porcentagem = (variacao / preco_anterior) * 100
+    cor_variacao = "positive" if variacao > 0 else "negative"
+    simbolo_variacao = "▲" if variacao > 0 else "▼"
+
+    # Exibir o preço da ação seguindo o padrão do Google Finance
+    st.markdown(f"""
+        <h2>{preco_atual:.2f} BRL <span class="subtext">BRL</span></h2>
+        <p class="{cor_variacao}">{simbolo_variacao} {variacao:.2f} ({porcentagem:.2f}%) hoje</p>
+    """, unsafe_allow_html=True)
 
     # =====================================
     # 📌 PARTE 01 - HISTÓRICO DE PREÇOS
