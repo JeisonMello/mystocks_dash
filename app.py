@@ -2,7 +2,7 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd
 import plotly.graph_objects as go
-from yahooquery import Ticker  # Correção da importação para busca automática
+from yahooquery import search  # Correta importação para busca automática de ações
 
 # Estilização CSS para alinhar com o Google Finance
 st.markdown("""
@@ -54,21 +54,29 @@ st.subheader("🔎 Buscar empresa listada")
 
 ticker_input = st.text_input("Digite o nome ou código da ação:")
 
+# Inicializando a variável do ticker
 ticker = None
+
+# Se o usuário digitou algo, tentamos buscar as sugestões
 if ticker_input:
     try:
-        ticker_obj = Ticker(ticker_input)
-        search_results = ticker_obj.summary_detail
+        resultados = search(ticker_input)  # Faz a busca de ações no Yahoo Finance
 
-        if not search_results:
-            st.error("❌ Nenhuma empresa encontrada. Tente outro nome ou código.")
+        if "quotes" in resultados and resultados["quotes"]:
+            # Criar dicionário {Ticker: Nome da Empresa}
+            opcoes = {r["symbol"]: f"{r['shortname']} ({r['symbol']})" for r in resultados["quotes"]}
+
+            # Criar menu suspenso com os resultados encontrados
+            escolha = st.selectbox("Selecione a empresa:", list(opcoes.values()))
+
+            # Encontrar o ticker correspondente à escolha do usuário
+            ticker = [k for k, v in opcoes.items() if v == escolha][0]
         else:
-            available_tickers = list(search_results.keys())
-            selected_ticker = st.selectbox("Selecione a empresa:", available_tickers)
-            if selected_ticker:
-                ticker = selected_ticker
+            st.error("❌ Nenhuma empresa encontrada. Tente outro nome ou código.")
+            ticker = None
     except Exception as e:
         st.error(f"❌ Erro ao buscar empresas: {str(e)}")
+        ticker = None
 
 # Se um ticker foi selecionado, continuamos com os dados
 if ticker:
