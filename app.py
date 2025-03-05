@@ -27,6 +27,17 @@ st.markdown("""
             color: #EA4335 !important;
             font-size: 20px !important;
         }
+        .period-selector {
+            font-size: 16px !important;
+            color: #cccccc !important;
+            padding: 6px 15px !important;
+            text-transform: none !important;
+        }
+        .active-period {
+            color: #4285F4 !important;
+            font-weight: bold !important;
+            border-bottom: 2px solid #4285F4 !important;
+        }
         hr {
             border: 0;
             height: 1px;
@@ -49,7 +60,26 @@ if ticker_input:
 
     # Buscar dados da ação
     stock = yf.Ticker(ticker)
-    dados = stock.history(period="10y")
+    
+    # 📌 Seleção de período igual ao Google Finance
+    periodos = {
+        "1D": "1d", "5D": "5d", "1M": "1mo", "6M": "6mo",
+        "YTD": "ytd", "1Y": "1y", "5Y": "5y", "Max": "max"
+    }
+    
+    periodo_selecionado = "6M"  # Padrão: últimos 6 meses
+
+    # Exibição dos períodos como no Google Finance
+    st.markdown(
+        " | ".join(
+            [f"<span class='active-period'>{p}</span>" if p == "6M" else f"<span class='period-selector'>{p}</span>"
+             for p in periodos.keys()]
+        ),
+        unsafe_allow_html=True
+    )
+
+    # Buscar histórico de preços da ação
+    dados = stock.history(period=periodos[periodo_selecionado])
 
     # Buscar preço atual
     preco_atual = dados["Close"].iloc[-1]
