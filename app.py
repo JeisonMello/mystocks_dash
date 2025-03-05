@@ -3,7 +3,7 @@ import yfinance as yf
 import pandas as pd
 import plotly.graph_objects as go
 
-# Estilização CSS para alinhar os elementos ao estilo do Google Finance
+# Estilização CSS para alinhar com o Google Finance
 st.markdown("""
     <style>
         body {
@@ -32,15 +32,11 @@ st.markdown("""
             background: #666;
             margin: 10px 0 10px 0;
         }
-        h2 {
-            font-size: 24px !important;
-            font-weight: bold !important;
-        }
     </style>
 """, unsafe_allow_html=True)
 
 # Título do dashboard
-st.title("📊 Dashboard de Ações")
+st.title("📊 Dashboard da Ação")
 
 # Entrada do usuário
 ticker_input = st.text_input("Digite o código da ação (ex: AAPL, TSLA, PETR4.SA):")
@@ -57,37 +53,42 @@ if ticker_input:
     # Buscar setor da empresa
     setor = stock.info.get("sector", "Setor não encontrado")
     st.subheader(f"🏢 Setor da Empresa - {ticker}")
-    st.write(f"📌 **{setor}**")
+    st.write(f"📌 {setor}")
 
     # =====================================
     # 📌 PARTE 01 - HISTÓRICO DE PREÇOS
     # =====================================
-    
     st.subheader(f"📈 Histórico de Preços - {ticker}")
-    fig_price = go.Figure()
+    
+    # Botões de período
+    periodos = {"1D": "1d", "5D": "5d", "1M": "1mo", "6M": "6mo", "YTD": "ytd", "1Y": "1y", "5Y": "5y", "Max": "max"}
+    periodo_selecionado = st.radio("Escolha o período:", list(periodos.keys()), index=3, horizontal=True)
+    periodo = periodos[periodo_selecionado]
+    
+    # Atualizar os dados com base no período
+    dados = stock.history(period=periodo)
 
+    # Criar gráfico no estilo Google Finance
+    fig_price = go.Figure()
     fig_price.add_trace(go.Scatter(
         x=dados.index, 
         y=dados["Close"], 
         mode='lines',
-        fill='tozeroy',  # Preenchimento suave
-        line=dict(color='#4285F4', width=2),  # Azul Google Finance mais fino
-        fillcolor='rgba(66, 133, 244, 0.2)'  # Transparência suave no fundo
+        line=dict(color='#4285F4', width=2)
     ))
-
+    
     fig_price.update_layout(
         template="plotly_white",
-        title=f"Evolução do Preço - {ticker}",
-        xaxis_title="Ano",
+        xaxis_title="",
         yaxis_title="Preço (R$)",
         margin=dict(l=40, r=40, t=40, b=40),
-        plot_bgcolor="rgba(0,0,0,0)",  # Fundo transparente
-        paper_bgcolor="rgba(0,0,0,0)",  # Fundo da área do gráfico
-        font=dict(color="white"),  # Texto branco
-        xaxis=dict(showgrid=False),  # Remove grade vertical
-        yaxis=dict(showgrid=True, gridcolor="rgba(200, 200, 200, 0.2)")  # Grade cinza suave
+        font=dict(color="white"),
+        xaxis=dict(showgrid=False),
+        yaxis=dict(showgrid=True, gridcolor="rgba(200, 200, 200, 0.2)"),
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)"
     )
-
+    
     st.plotly_chart(fig_price)
 
     # =====================================
