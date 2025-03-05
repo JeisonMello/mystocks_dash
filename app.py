@@ -49,14 +49,6 @@ st.markdown("""
                 padding: 6px;
             }
         }
-        /* Estilização para deixar os st.button invisíveis */
-        .stButton>button {
-            background-color: transparent;
-            border: none;
-            box-shadow: none;
-            color: transparent;
-            padding: 0;
-        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -100,7 +92,7 @@ if ticker_input:
     if "periodo_selecionado" not in st.session_state:
         st.session_state["periodo_selecionado"] = "6M"
 
-    # Criando a barra de seleção com área clicável via HTML
+    # Criando a barra de seleção visual
     periodo_html = '<div class="period-container">'
     for p, v in periodos.items():
         selected_class = "selected-period" if p == st.session_state["periodo_selecionado"] else ""
@@ -110,50 +102,17 @@ if ticker_input:
 
     st.markdown(periodo_html, unsafe_allow_html=True)
 
-    # Captura de cliques via JavaScript (utilizando form oculto)
-    st.markdown("""
-        <script>
-            function set_periodo(period) {
-                document.getElementById("hidden_period").value = period;
-                document.getElementById("hidden_form").submit();
-            }
-        </script>
-        <form id="hidden_form">
-            <input type="hidden" id="hidden_period" name="period">
-        </form>
-    """, unsafe_allow_html=True)
-
-    # Captura do período selecionado via query_params
-    period_selected = st.experimental_get_query_params().get("period", [st.session_state["periodo_selecionado"]])[0]
+    # Captura de cliques e atualização do período via Streamlit (sem necessidade de JavaScript)
+    period_selected = st.query_params.get("period", [st.session_state["periodo_selecionado"]])[0]
     if period_selected in periodos:
         st.session_state["periodo_selecionado"] = period_selected
 
-    # --- Botões invisíveis para garantir a funcionalidade de clique ---
-    col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
-    with col1:
-        if st.button("1D", key="1D"):
-            st.session_state["periodo_selecionado"] = "1D"
-    with col2:
-        if st.button("5D", key="5D"):
-            st.session_state["periodo_selecionado"] = "5D"
-    with col3:
-        if st.button("1M", key="1M"):
-            st.session_state["periodo_selecionado"] = "1M"
-    with col4:
-        if st.button("6M", key="6M"):
-            st.session_state["periodo_selecionado"] = "6M"
-    with col5:
-        if st.button("YTD", key="YTD"):
-            st.session_state["periodo_selecionado"] = "YTD"
-    with col6:
-        if st.button("1Y", key="1Y"):
-            st.session_state["periodo_selecionado"] = "1Y"
-    with col7:
-        if st.button("5Y", key="5Y"):
-            st.session_state["periodo_selecionado"] = "5Y"
-    with col8:
-        if st.button("Max", key="Max"):
-            st.session_state["periodo_selecionado"] = "Max"
+    # --- Criando botões invisíveis para capturar cliques corretamente ---
+    colunas = st.columns(len(periodos))
+    for i, (p, v) in enumerate(periodos.items()):
+        with colunas[i]:
+            if st.button(p, key=p):
+                st.session_state["periodo_selecionado"] = p
 
     # Atualizar os dados com base no período selecionado
     periodo = periodos[st.session_state["periodo_selecionado"]]
