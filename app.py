@@ -92,16 +92,13 @@ if ticker_input:
     if "periodo_selecionado" not in st.session_state:
         st.session_state["periodo_selecionado"] = "6M"
 
-    # Criando o layout correto do seletor de período
-    periodo_html = '<div class="period-container">'
-    for p in periodos.keys():
-        selected_class = "selected-period" if p == st.session_state["periodo_selecionado"] else ""
-        periodo_html += f'<span class="period-selector {selected_class}" onclick="set_periodo(\'{p}\')">{p}</span> | '
-    periodo_html = periodo_html.rstrip(" | ")  # Remove o último "|"
-    periodo_html += '</div>'
+    # Criando o layout correto do seletor de período com interação real
+    cols = st.columns(len(periodos))  # Criando colunas para espaçamento correto
 
-    # Exibir os períodos corretamente
-    st.markdown(periodo_html, unsafe_allow_html=True)
+    for i, (p, v) in enumerate(periodos.items()):
+        with cols[i]:  # Criando a área de clique correta
+            if st.button(p, key=f"period_{p}"):
+                st.session_state["periodo_selecionado"] = p
 
     # Atualizar os dados com base no período selecionado
     periodo = periodos[st.session_state["periodo_selecionado"]]
