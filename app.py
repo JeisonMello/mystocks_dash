@@ -98,7 +98,7 @@ if ticker_input:
     st.subheader(f"💰 Dividendos Anuais - {ticker}")
     if not stock.dividends.empty:
         stock.dividends.index = pd.to_datetime(stock.dividends.index)
-        dividendos = stock.dividends.resample("Y").sum().tail(10)
+        dividendos = stock.dividends.resample("Y").sum().tail(5)
         anos = dividendos.index.year
         
         # Calcular preço médio anual para obter o Dividend Yield (%)
@@ -119,7 +119,7 @@ if ticker_input:
 
         fig_divid.update_layout(
             template="plotly_dark",
-            title=f"Dividend Yield - Últimos 10 Anos ({ticker})",
+            title=f"Dividend Yield - Últimos 5 Anos ({ticker})",
             xaxis_title="Ano",
             yaxis_title="Yield (%)",
             margin=dict(l=40, r=40, t=40, b=40),
@@ -130,16 +130,16 @@ if ticker_input:
 
         # 📌 Estatísticas de Dividendos
         st.subheader(f"📊 Estatísticas de Dividendos - {ticker}")
-        ultimo_dividendo = dividendos.iloc[-1] if not dividendos.empty else 0
-        media_10_anos = dividend_yield.mean()
-        anos_sem_dividendo = dividendos[dividendos == 0].index.tolist()
+        ultimo_dividendo = dividend_yield.iloc[-1] if not dividend_yield.empty else 0
+        media_5_anos = dividend_yield.mean()
+        anos_sem_dividendo = dividend_yield[dividend_yield == 0].index.tolist()
 
         st.write(f"🔹 **Último dividend yield:** {ultimo_dividendo:.2f}%")
-        st.write(f"🔹 **Média dos últimos 10 anos:** {media_10_anos:.2f}%")
+        st.write(f"🔹 **Média dos últimos 5 anos:** {media_5_anos:.2f}%")
 
         if anos_sem_dividendo:
             st.write(f"❌ **Anos sem pagamento de dividendos:** {', '.join(map(str, anos_sem_dividendo))}")
         else:
-            st.write(f"✅ **{ticker} pagou dividendos em todos os últimos 10 anos.**")
+            st.write(f"✅ **{ticker} pagou dividendos em todos os últimos 5 anos.**")
     else:
         st.warning(f"⚠️ Nenhuma informação de dividendos encontrada para {ticker}.")
