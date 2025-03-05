@@ -2,7 +2,7 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd
 import plotly.graph_objects as go
-from yahooquery import search  # Correta importação para busca automática de ações
+from yahooquery import search  # Importação correta para busca automática
 
 # Estilização CSS para alinhar com o Google Finance
 st.markdown("""
@@ -48,16 +48,17 @@ st.markdown("""
 st.title("Dashboard da Ação")
 
 # ==============================
-# 🔍 BUSCA AUTOMÁTICA DE EMPRESAS
+# 🔍 BUSCA AUTOMÁTICA DE EMPRESAS COM AUTOCOMPLETE
 # ==============================
 st.subheader("🔎 Buscar empresa listada")
-
-ticker_input = st.text_input("Digite o nome ou código da ação:")
 
 # Inicializando a variável do ticker
 ticker = None
 
-# Se o usuário digitou algo, tentamos buscar as sugestões
+# Campo de entrada onde o usuário digita a empresa
+ticker_input = st.text_input("Digite o nome ou código da ação:", "")
+
+# Se o usuário digitou algo, buscamos as sugestões
 if ticker_input:
     try:
         resultados = search(ticker_input)  # Faz a busca de ações no Yahoo Finance
@@ -66,8 +67,8 @@ if ticker_input:
             # Criar dicionário {Ticker: Nome da Empresa}
             opcoes = {r["symbol"]: f"{r['shortname']} ({r['symbol']})" for r in resultados["quotes"]}
 
-            # Criar menu suspenso com os resultados encontrados
-            escolha = st.selectbox("Selecione a empresa:", list(opcoes.values()))
+            # Criar um autocomplete onde as opções aparecem no próprio campo de texto
+            escolha = st.selectbox("Selecione a empresa:", list(opcoes.values()), index=0, key="empresa_select")
 
             # Encontrar o ticker correspondente à escolha do usuário
             ticker = [k for k, v in opcoes.items() if v == escolha][0]
