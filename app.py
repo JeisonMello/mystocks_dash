@@ -2,7 +2,6 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd
 import plotly.graph_objects as go
-from yahooquery import search  # Importação correta para busca automática
 
 # Estilização CSS para alinhar com o Google Finance
 st.markdown("""
@@ -12,21 +11,34 @@ st.markdown("""
         body {
             font-family: 'Inter', sans-serif;
         }
-        .suggestion-box {
-            margin-top: 5px;
-            background: #222;
-            padding: 5px;
-            border-radius: 5px;
+        .period-container {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
         }
-        .suggestion {
-            color: white;
+        .period-selector {
+            font-size: 16px;
+            font-weight: 600;
+            color: #ccc;
             cursor: pointer;
-            padding: 5px;
-            border-radius: 5px;
-            transition: background 0.3s;
+            padding: 8px 12px;
+            transition: color 0.2s ease-in-out, border-bottom 0.2s ease-in-out;
+            user-select: none;
         }
-        .suggestion:hover {
-            background: #333;
+        .period-selector:hover {
+            color: #ffffff;
+        }
+        .selected-period {
+            color: #4285F4;
+            border-bottom: 3px solid #4285F4;
+            padding-bottom: 2px;
+        }
+        .sector-text {
+            font-size: 18px;
+            font-weight: 500;
+            color: white;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -34,39 +46,10 @@ st.markdown("""
 # Título do dashboard
 st.title("Dashboard da Ação")
 
-# ==============================
-# 🔍 BUSCA AUTOMÁTICA DE EMPRESAS SEM DUPLICAÇÃO
-# ==============================
-st.subheader("🔎 Buscar empresa listada")
+# Campo de entrada para o código da ação
+ticker = st.text_input("Digite o código da ação (ex: AAPL, TSLA, PETR4.SA):").upper()
 
-# Campo de entrada para buscar empresas
-ticker_input = st.text_input("Digite o nome ou código da ação:")
-
-# Inicializando a variável do ticker
-ticker = None
-opcoes = {}
-
-# Buscar sugestões ao digitar
-if ticker_input:
-    try:
-        resultados = search(ticker_input)  # Faz a busca de ações no Yahoo Finance
-
-        if "quotes" in resultados and resultados["quotes"]:
-            # Criar dicionário {Ticker: Nome da Empresa}
-            opcoes = {r["symbol"]: f"{r['shortname']} ({r['symbol']})" for r in resultados["quotes"]}
-
-            # Exibir sugestões abaixo do campo de entrada como botões
-            st.markdown('<div class="suggestion-box">', unsafe_allow_html=True)
-            for k, v in opcoes.items():
-                if st.button(v, key=k):
-                    ticker = k  # Quando o usuário clica, selecionamos esse ticker
-            st.markdown('</div>', unsafe_allow_html=True)
-        else:
-            st.error("❌ Nenhuma empresa encontrada. Tente outro nome ou código.")
-    except Exception as e:
-        st.error(f"❌ Erro ao buscar empresas: {str(e)}")
-
-# Se um ticker foi selecionado, continuamos com os dados
+# Se um ticker foi inserido, buscamos os dados
 if ticker:
     try:
         stock = yf.Ticker(ticker)
