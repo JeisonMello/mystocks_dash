@@ -147,8 +147,6 @@ if ticker_input:
 
         fig_price.update_layout(
             template="plotly_white",
-            xaxis_title="Ano",
-            yaxis_title="Preço (R$)",
             margin=dict(l=40, r=40, t=40, b=40),
             plot_bgcolor="rgba(0,0,0,0)",
             paper_bgcolor="rgba(0,0,0,0)",
