@@ -42,9 +42,8 @@ st.markdown("""
         }
         .selected-period {
             color: #ffffff;
-            background-color: #3b5998;
-            border-radius: 4px;
-            padding: 5px 10px;
+            border-bottom: 3px solid #4285F4;
+            padding-bottom: 2px;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -94,7 +93,7 @@ if ticker_input:
         dados = stock.history(period=periodo)
 
         # ==========================
-        # HISTÓRICO DE PREÇOS
+        # HISTÓRICO DE PREÇOS COM ESCALA PROPORCIONAL
         # ==========================
         fig_price = go.Figure()
 
@@ -103,10 +102,13 @@ if ticker_input:
             y=dados["Close"], 
             mode='lines',
             fill='tozeroy',
-            line=dict(color='#4285F4', width=2),
-            fillcolor='rgba(66, 133, 244, 0.2)'
+            line=dict(color='#EA4335', width=2),  # Linha vermelha
+            fillcolor='rgba(234, 67, 53, 0.2)'
         ))
 
+        # Ajuste da escala do eixo Y para evitar que o gráfico toque zero
+        min_price = dados["Close"].min()
+        max_price = dados["Close"].max()
         fig_price.update_layout(
             template="plotly_white",
             xaxis_title="Ano",
@@ -116,7 +118,8 @@ if ticker_input:
             paper_bgcolor="rgba(0,0,0,0)",
             font=dict(color="black"),
             xaxis=dict(showgrid=False),
-            yaxis=dict(showgrid=True, gridcolor="rgba(200, 200, 200, 0.2)")
+            yaxis=dict(range=[min_price * 0.95, max_price * 1.05],  # Ajuste para evitar que a linha vá até zero
+                       showgrid=True, gridcolor="rgba(200, 200, 200, 0.2)")
         )
 
         st.plotly_chart(fig_price)
