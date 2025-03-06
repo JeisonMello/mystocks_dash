@@ -47,7 +47,7 @@ if ticker_input:
 
     # Buscar dados da ação
     stock = yf.Ticker(ticker)
-    stock_info = stock.fast_info  # Usando fast_info para buscar dados mais rapidamente
+    stock_info = stock.info  
     dados = stock.history(period="10y")
 
     if not stock_info:
@@ -56,31 +56,36 @@ if ticker_input:
         company_name = stock_info.get("longName", ticker)
 
         # Preço atual e variação
-        preco_atual = stock_info.get("last_price", None)  # Correção para sempre obter o último preço
-        preco_anterior = stock_info.get("previous_close", None)
+        preco_atual = stock_info.get("regularMarketPrice", None)
+        preco_anterior = stock_info.get("previousClose", None)
 
-        if preco_atual and preco_anterior:
+        if preco_atual is not None and preco_anterior is not None:
             variacao = preco_atual - preco_anterior
             porcentagem = (variacao / preco_anterior) * 100
             cor_variacao = "price-change-positive" if variacao > 0 else "price-change-negative"
             simbolo_variacao = "▲" if variacao > 0 else "▼"
+        else:
+            variacao = 0
+            porcentagem = 0
+            cor_variacao = "price-change-positive"
+            simbolo_variacao = "▲"
 
-            # Horário do fechamento do mercado
-            horario_fechamento = stock_info.get("last_price_time", None)
-            if horario_fechamento:
-                from datetime import datetime
-                horario = datetime.utcfromtimestamp(horario_fechamento).strftime('%d %b, %I:%M %p GMT-3')
-                horario_texto = f"At close: {horario}"
-            else:
-                horario_texto = ""
+        # Horário do fechamento do mercado
+        horario_fechamento = stock_info.get("regularMarketTime", None)
+        if horario_fechamento:
+            from datetime import datetime
+            horario = datetime.utcfromtimestamp(horario_fechamento).strftime('%d %b, %I:%M %p GMT-3')
+            horario_texto = f"At close: {horario}"
+        else:
+            horario_texto = ""
 
-            st.markdown(f"""
-                <div class="price-container">
-                    {preco_atual:.2f} BRL 
-                    <span class="{cor_variacao}">{simbolo_variacao} {variacao:.2f} ({porcentagem:.2f}%)</span>
-                </div>
-                <p class="timestamp">{horario_texto}</p>
-            """, unsafe_allow_html=True)
+        st.markdown(f"""
+            <div class="price-container">
+                {preco_atual:.2f} BRL 
+                <span class="{cor_variacao}">{simbolo_variacao} {variacao:.2f} ({porcentagem:.2f}%)</span>
+            </div>
+            <p class="timestamp">{horario_texto}</p>
+        """, unsafe_allow_html=True)
 
         # ==========================
         # HISTÓRICO DE PREÇOS COM ESCALA CORRETA
