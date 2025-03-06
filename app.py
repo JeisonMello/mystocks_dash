@@ -92,7 +92,7 @@ if ticker_input:
             selected_class = "selected-period" if p == st.session_state["periodo_selecionado"] else "period-selector"
             if st.button(p, key=p):
                 st.session_state["periodo_selecionado"] = p
-            periodo_html += f'<span class="{selected_class}" onclick="set_periodo('{p}')">{p}</span>'
+            periodo_html += f'<span class="{selected_class}" onclick="set_periodo(\"{p}\")">{p}</span>'
         periodo_html += '</div>'
         
         st.markdown(periodo_html, unsafe_allow_html=True)
