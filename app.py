@@ -21,29 +21,35 @@ st.markdown("""
             font-weight: normal !important;
             color: #999999 !important;
         }
-        .positive {
-            color: #34A853 !important;
-            font-size: 20px !important;
+        .period-container {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
         }
-        .negative {
-            color: #EA4335 !important;
-            font-size: 20px !important;
+        .period-selector {
+            font-size: 16px;
+            font-weight: 600;
+            color: #ccc;
+            cursor: pointer;
+            padding: 8px 12px;
+            transition: color 0.2s ease-in-out, border-bottom 0.2s ease-in-out;
+            user-select: none;
         }
-        hr {
-            border: 0;
-            height: 1px;
-            background: #666;
-            margin: 10px 0 10px 0;
+        .period-selector:hover {
+            color: #ffffff;
         }
-        .title-container {
+        .selected-period {
+            color: #ffffff;
+            background-color: #3b5998;
+            border-radius: 4px;
+            padding: 5px 10px;
+        }
+        .sector-text {
             font-size: 18px;
-            color: #666;
-            text-transform: uppercase;
-        }
-        .stock-title {
-            font-size: 26px;
             font-weight: 500;
-            color: #222;
+            color: white;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -65,11 +71,34 @@ if ticker_input:
         st.error("Ação não encontrada! Verifique o código e tente novamente.")
     else:
         company_name = stock_info.get("longName", ticker)
-        market = ""  # Define BVMF como padrão
         st.markdown(f"""
-            <div class='title-container'>HOME > {ticker} · {market}</div>
+            <div class='title-container'>{ticker} ·</div>
             <h2 class='stock-title'>{company_name}</h2>
         """, unsafe_allow_html=True)
+
+        # ==========================
+        # SELETOR DE PERÍODO
+        # ==========================
+        periodos = {
+            "1D": "1d", "5D": "5d", "1M": "1mo", "6M": "6mo",
+            "YTD": "ytd", "1Y": "1y", "5Y": "5y", "ALL": "max"
+        }
+
+        if "periodo_selecionado" not in st.session_state:
+            st.session_state["periodo_selecionado"] = "6M"
+
+        periodo_html = '<div class="period-container">'
+        for p, v in periodos.items():
+            selected_class = "selected-period" if p == st.session_state["periodo_selecionado"] else "period-selector"
+            if st.button(p, key=p):
+                st.session_state["periodo_selecionado"] = p
+            periodo_html += f'<span class="{selected_class}" onclick="set_periodo('{p}')">{p}</span>'
+        periodo_html += '</div>'
+        
+        st.markdown(periodo_html, unsafe_allow_html=True)
+
+        periodo = periodos[st.session_state["periodo_selecionado"]]
+        dados = stock.history(period=periodo)
 
         # ==========================
         # HISTÓRICO DE PREÇOS
@@ -87,7 +116,6 @@ if ticker_input:
 
         fig_price.update_layout(
             template="plotly_white",
-            title=f"Evolução do Preço - {ticker}",
             xaxis_title="Ano",
             yaxis_title="Preço (R$)",
             margin=dict(l=40, r=40, t=40, b=40),
