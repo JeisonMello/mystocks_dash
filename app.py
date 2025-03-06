@@ -27,13 +27,14 @@ st.markdown("""
             justify-content: flex-start;
             padding: 8px 0;
             border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            gap: 15px;
         }
         .period-selector {
             font-size: 16px;
             font-weight: 600;
             color: #ccc;
             cursor: pointer;
-            padding: 8px 12px;
+            padding: 4px 8px;
             transition: color 0.2s ease-in-out, border-bottom 0.2s ease-in-out;
             user-select: none;
         }
@@ -42,9 +43,8 @@ st.markdown("""
         }
         .selected-period {
             color: #ffffff;
-            background-color: #3b5998;
-            border-radius: 4px;
-            padding: 5px 10px;
+            border-bottom: 3px solid #4285F4;
+            padding-bottom: 2px;
         }
         .sector-text {
             font-size: 18px;
@@ -77,7 +77,7 @@ if ticker_input:
         """, unsafe_allow_html=True)
 
         # ==========================
-        # SELETOR DE PERÍODO
+        # SELETOR DE PERÍODO HORIZONTAL
         # ==========================
         periodos = {
             "1D": "1d", "5D": "5d", "1M": "1mo", "6M": "6mo",
@@ -90,14 +90,14 @@ if ticker_input:
         periodo_html = '<div class="period-container">'
         for p, v in periodos.items():
             selected_class = "selected-period" if p == st.session_state["periodo_selecionado"] else "period-selector"
-            if st.button(p, key=p):
-                st.session_state["periodo_selecionado"] = p
-            periodo_html += f'<span class="{selected_class}" onclick="set_periodo(\"{p}\")">{p}</span>'
+            periodo_html += f'<span class="{selected_class}" onclick="window.location.search='?period={p}'">{p}</span>'
         periodo_html += '</div>'
         
         st.markdown(periodo_html, unsafe_allow_html=True)
 
-        periodo = periodos[st.session_state["periodo_selecionado"]]
+        # Capturar período selecionado da URL
+        periodo = periodos.get(st.query_params.get("period", [st.session_state["periodo_selecionado"]])[0], "6mo")
+        st.session_state["periodo_selecionado"] = periodo
         dados = stock.history(period=periodo)
 
         # ==========================
