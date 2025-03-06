@@ -100,7 +100,7 @@ if ticker_input:
         periodo_html = '<div class="period-container">'
         for p, v in periodos.items():
             selected_class = "selected-period" if p == st.session_state["periodo_selecionado"] else "period-selector"
-            periodo_html += f'<span class="{selected_class}" onclick=\"window.location.search='?period=' + '{p}'\">{p}</span>'
+            periodo_html += f'<span class="{selected_class}" onclick=\"window.location.search='?period={p}'\">{p}</span>'
         periodo_html += '</div>'
 
         st.markdown(periodo_html, unsafe_allow_html=True)
