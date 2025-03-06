@@ -101,7 +101,8 @@ if ticker_input:
 
         # Aplicar zoom automático para manter a escala proporcional ao Yahoo Finance
         fig_price.update_layout(
-            modebar_remove=['zoom', 'pan', 'reset', 'select', 'lasso', 'zoomIn', 'zoomOut', 'autoScale', 'home', 'toImage', 'fullscreen', 'resetScale'],
+            modebar={'remove': ['zoom', 'pan', 'reset', 'select', 'lasso', 'zoomIn', 'zoomOut', 'autoScale', 'home', 'toImage', 'fullscreen', 'resetScale']},
+            
             modebar_remove=['zoom', 'pan', 'reset', 'select', 'lasso', 'zoomIn', 'zoomOut', 'autoScale', 'home'], 
             template="plotly_white",
             xaxis_title="Ano",
