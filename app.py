@@ -12,28 +12,27 @@ st.markdown("""
             font-family: 'Inter', sans-serif;
             background-color: #0e0e0e;
         }
-        h2 {
-            font-size: 32px !important;
-            font-weight: normal !important;
-            margin-bottom: 0px !important;
-        }
-        .subtext {
-            font-size: 20px !important;
-            font-weight: normal !important;
-            color: #999999 !important;
-        }
-        .price-change-positive {
-            color: #34A853 !important;
-            font-size: 20px !important;
-        }
-        .price-change-negative {
-            color: #EA4335 !important;
-            font-size: 20px !important;
-        }
-        .price-text {
+        .price-container {
             font-size: 36px;
             font-weight: bold;
             color: white;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .price-change-positive {
+            color: #34A853 !important;
+            font-size: 24px !important;
+            font-weight: bold;
+        }
+        .price-change-negative {
+            color: #EA4335 !important;
+            font-size: 24px !important;
+            font-weight: bold;
+        }
+        .timestamp {
+            font-size: 14px;
+            color: #999999;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -61,10 +60,11 @@ if ticker_input:
         """, unsafe_allow_html=True)
 
         # ==========================
-        # PREÇO ATUAL E VARIAÇÃO
+        # PREÇO ATUAL, VARIAÇÃO E HORÁRIO DE FECHAMENTO
         # ==========================
         preco_atual = stock_info.get("regularMarketPrice", None)
         preco_anterior = stock_info.get("previousClose", None)
+        horario_fechamento = stock_info.get("regularMarketTime", None)
         if preco_atual and preco_anterior:
             variacao = preco_atual - preco_anterior
             porcentagem = (variacao / preco_anterior) * 100
@@ -72,9 +72,16 @@ if ticker_input:
             simbolo_variacao = "▲" if variacao > 0 else "▼"
             
             st.markdown(f"""
-                <p class="price-text">{preco_atual:.2f} BRL</p>
-                <p class="{cor_variacao}">{simbolo_variacao} {variacao:.2f} ({porcentagem:.2f}%)</p>
+                <div class="price-container">
+                    {preco_atual:.2f} BRL 
+                    <span class="{cor_variacao}">{simbolo_variacao} {variacao:.2f} ({porcentagem:.2f}%)</span>
+                </div>
             """, unsafe_allow_html=True)
+
+            if horario_fechamento:
+                from datetime import datetime
+                horario = datetime.utcfromtimestamp(horario_fechamento).strftime('%d %b, %I:%M %p GMT-3')
+                st.markdown(f"<p class='timestamp'>At close: {horario}</p>", unsafe_allow_html=True)
 
         # ==========================
         # HISTÓRICO DE PREÇOS COM ZOOM AUTOMÁTICO PARA ESCALA CORRETA
