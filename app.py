@@ -55,7 +55,7 @@ if ticker_input:
     else:
         company_name = stock_info.get("longName", ticker)
         st.markdown(f"""
-            <div class='title-container'>{ticker} ·</div>
+            <div class='title-container'>Histórico de Preços</div>
             <h2 class='stock-title'>{company_name}</h2>
         """, unsafe_allow_html=True)
 
