@@ -34,11 +34,6 @@ st.markdown("""
             font-size: 14px;
             color: #999999;
         }
-        .title-container {
-            font-size: 22px;
-            color: white;
-            font-weight: 600;
-        }
         .period-container {
             display: flex;
             align-items: center;
@@ -78,15 +73,19 @@ if ticker_input:
 
     # Buscar dados da ação
     stock = yf.Ticker(ticker)
-    stock_info = stock.info  
-    dados = stock.history(period="10y")
 
-    if not stock_info:
+    try:
+        stock_info = stock.info
+    except Exception as e:
+        st.error(f"Erro ao obter dados da ação: {e}")
+        stock_info = None
+
+    if not stock_info or "longName" not in stock_info:
         st.error("Ação não encontrada! Verifique o código e tente novamente.")
     else:
         company_name = stock_info.get("longName", ticker)
-        
-        # Exibir o título dinâmico
+
+        # Exibir o nome da ação no topo
         st.markdown(f"""
             <div class="title-container">{ticker} · {company_name}</div>
         """, unsafe_allow_html=True)
@@ -134,14 +133,20 @@ if ticker_input:
         if "periodo_selecionado" not in st.session_state:
             st.session_state["periodo_selecionado"] = "6M"
 
-        # Criar os botões de período
-        colunas = st.columns(len(periodos))
-        for i, (p, v) in enumerate(periodos.items()):
-            with colunas[i]:
-                if st.button(p, key=p):
-                    st.session_state["periodo_selecionado"] = p
+        # Criando botões de período SEM BORDAS visíveis
+        periodo_html = '<div class="period-container">'
+        for p, v in periodos.items():
+            selected_class = "selected-period" if p == st.session_state["periodo_selecionado"] else "period-selector"
+            periodo_html += f'<span class="{selected_class}" onclick="window.location.search=\'?period={p}\'">{p}</span>'
+        periodo_html += '</div>'
 
-        # Atualizar dados conforme período selecionado
+        st.markdown(periodo_html, unsafe_allow_html=True)
+
+        # Captura do período selecionado via query_params atualizado
+        period_selected = st.query_params.get("period", [st.session_state["periodo_selecionado"]])[0]
+        if period_selected in periodos:
+            st.session_state["periodo_selecionado"] = period_selected
+
         periodo = periodos[st.session_state["periodo_selecionado"]]
         dados = stock.history(period=periodo)
 
@@ -159,9 +164,10 @@ if ticker_input:
             fill='tozeroy',
             line=dict(color=cor_grafico, width=2),
             fillcolor=transparencia,
-            hovertemplate='<b>%{y:.2f}</b><br>%{x|%d %b %y}<extra></extra>'
+            hovertemplate='<b>%{y:.2f}</b><br>%{x|%d %b %y}'
         ))
 
+        # Aplicar zoom automático para manter a escala proporcional ao Yahoo Finance
         fig_price.update_layout(
             template="plotly_white",
             xaxis_title="Ano",
