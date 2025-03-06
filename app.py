@@ -26,7 +26,6 @@ st.markdown("""
             align-items: center;
             justify-content: flex-start;
             padding: 8px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
             gap: 15px;
         }
         .period-selector {
@@ -35,7 +34,7 @@ st.markdown("""
             color: #ccc;
             cursor: pointer;
             padding: 4px 8px;
-            transition: color 0.2s ease-in-out, border-bottom 0.2s ease-in-out;
+            transition: color 0.2s ease-in-out, background 0.2s ease-in-out;
             user-select: none;
         }
         .period-selector:hover {
@@ -43,13 +42,9 @@ st.markdown("""
         }
         .selected-period {
             color: #ffffff;
-            border-bottom: 3px solid #4285F4;
-            padding-bottom: 2px;
-        }
-        .sector-text {
-            font-size: 18px;
-            font-weight: 500;
-            color: white;
+            background-color: #3b5998;
+            border-radius: 4px;
+            padding: 5px 10px;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -77,7 +72,7 @@ if ticker_input:
         """, unsafe_allow_html=True)
 
         # ==========================
-        # SELETOR DE PERÍODO HORIZONTAL
+        # SELETOR DE PERÍODO HORIZONTAL (FUNCIONAL)
         # ==========================
         periodos = {
             "1D": "1d", "5D": "5d", "1M": "1mo", "6M": "6mo",
@@ -87,17 +82,15 @@ if ticker_input:
         if "periodo_selecionado" not in st.session_state:
             st.session_state["periodo_selecionado"] = "6M"
 
-        periodo_html = '<div class="period-container">'
-        for p, v in periodos.items():
-            selected_class = "selected-period" if p == st.session_state["periodo_selecionado"] else "period-selector"
-            periodo_html += f'<span class="{selected_class}" onclick="window.location.search=\'?period={p}\'">{p}</span>'
-        periodo_html += '</div>'
-        
-        st.markdown(periodo_html, unsafe_allow_html=True)
+        col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(len(periodos))
+        colunas = [col1, col2, col3, col4, col5, col6, col7, col8]
 
-        # Capturar período selecionado da URL
-        periodo = periodos.get(st.query_params.get("period", [st.session_state["periodo_selecionado"]])[0], "6mo")
-        st.session_state["periodo_selecionado"] = periodo
+        for i, (p, v) in enumerate(periodos.items()):
+            with colunas[i]:
+                if st.button(p, key=p):
+                    st.session_state["periodo_selecionado"] = p
+
+        periodo = periodos[st.session_state["periodo_selecionado"]]
         dados = stock.history(period=periodo)
 
         # ==========================
