@@ -10,6 +10,7 @@ st.markdown("""
 
         body {
             font-family: 'Inter', sans-serif;
+            background-color: #0e0e0e; /* Define um fundo escuro */
         }
         h2 {
             font-size: 32px !important;
@@ -37,7 +38,7 @@ st.markdown("""
             transition: color 0.2s ease-in-out, background 0.2s ease-in-out;
             user-select: none;
             background-color: transparent;
-            border: none;
+            border-bottom: 3px solid transparent; /* Mantém a linha invisível */
         }
         .period-selector:hover {
             color: #ffffff;
@@ -46,8 +47,6 @@ st.markdown("""
             color: #ffffff;
             border-bottom: 3px solid #4285F4;
             padding-bottom: 2px;
-            background-color: transparent;
-            border: none;
         }
     </style>
 """, unsafe_allow_html=True)
