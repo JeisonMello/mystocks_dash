@@ -30,32 +30,10 @@ st.markdown("""
             color: #EA4335 !important;
             font-size: 20px !important;
         }
-        .period-container {
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            padding: 8px 0;
-            gap: 15px;
-        }
-        .period-selector {
-            font-size: 16px;
-            font-weight: 600;
-            color: #ccc;
-            cursor: pointer;
-            padding: 4px 8px;
-            transition: color 0.2s ease-in-out, background 0.2s ease-in-out;
-            user-select: none;
-            background-color: transparent;
-            border-bottom: 3px solid transparent;
-        }
-        .period-selector:hover {
-            color: #ffffff;
-        }
-        .selected-period {
-            color: #ffffff;
-            border-bottom: 3px solid #4285F4;
-            padding-bottom: 2px;
-            background-color: transparent;
+        .price-text {
+            font-size: 36px;
+            font-weight: bold;
+            color: white;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -83,27 +61,7 @@ if ticker_input:
         """, unsafe_allow_html=True)
 
         # ==========================
-        # SELETOR DE PERÍODO HORIZONTAL (FUNCIONAL)
-        # ==========================
-        periodos = {
-            "1D": "1d", "5D": "5d", "1M": "1mo", "6M": "6mo",
-            "YTD": "ytd", "1Y": "1y", "5Y": "5y", "ALL": "max"
-        }
-
-        if "periodo_selecionado" not in st.session_state:
-            st.session_state["periodo_selecionado"] = "6M"
-
-        colunas = st.columns(len(periodos))
-        for i, (p, v) in enumerate(periodos.items()):
-            with colunas[i]:
-                if st.button(p, key=p):
-                    st.session_state["periodo_selecionado"] = p
-
-        periodo = periodos[st.session_state["periodo_selecionado"]]
-        dados = stock.history(period=periodo)
-
-        # ==========================
-        # CÁLCULO DE VARIAÇÃO DO PREÇO COM PRECISÃO YAHOO
+        # PREÇO ATUAL E VARIAÇÃO
         # ==========================
         preco_atual = stock_info.get("regularMarketPrice", None)
         preco_anterior = stock_info.get("previousClose", None)
@@ -112,7 +70,9 @@ if ticker_input:
             porcentagem = (variacao / preco_anterior) * 100
             cor_variacao = "price-change-positive" if variacao > 0 else "price-change-negative"
             simbolo_variacao = "▲" if variacao > 0 else "▼"
+            
             st.markdown(f"""
+                <p class="price-text">{preco_atual:.2f} BRL</p>
                 <p class="{cor_variacao}">{simbolo_variacao} {variacao:.2f} ({porcentagem:.2f}%)</p>
             """, unsafe_allow_html=True)
 
