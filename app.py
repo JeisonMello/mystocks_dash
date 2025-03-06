@@ -10,7 +10,7 @@ st.markdown("""
 
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #0e0e0e; /* Define um fundo escuro */
+            background-color: #0e0e0e;
         }
         h2 {
             font-size: 32px !important;
@@ -21,6 +21,14 @@ st.markdown("""
             font-size: 20px !important;
             font-weight: normal !important;
             color: #999999 !important;
+        }
+        .price-change-positive {
+            color: #34A853 !important;
+            font-size: 20px !important;
+        }
+        .price-change-negative {
+            color: #EA4335 !important;
+            font-size: 20px !important;
         }
         .period-container {
             display: flex;
@@ -38,7 +46,7 @@ st.markdown("""
             transition: color 0.2s ease-in-out, background 0.2s ease-in-out;
             user-select: none;
             background-color: transparent;
-            border-bottom: 3px solid transparent; /* Mantém a linha invisível */
+            border-bottom: 3px solid transparent;
         }
         .period-selector:hover {
             color: #ffffff;
@@ -47,6 +55,7 @@ st.markdown("""
             color: #ffffff;
             border-bottom: 3px solid #4285F4;
             padding-bottom: 2px;
+            background-color: transparent;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -84,9 +93,7 @@ if ticker_input:
         if "periodo_selecionado" not in st.session_state:
             st.session_state["periodo_selecionado"] = "6M"
 
-        col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(len(periodos))
-        colunas = [col1, col2, col3, col4, col5, col6, col7, col8]
-
+        colunas = st.columns(len(periodos))
         for i, (p, v) in enumerate(periodos.items()):
             with colunas[i]:
                 if st.button(p, key=p):
@@ -96,17 +103,34 @@ if ticker_input:
         dados = stock.history(period=periodo)
 
         # ==========================
-        # HISTÓRICO DE PREÇOS COM ESCALA PROPORCIONAL
+        # CÁLCULO DE VARIAÇÃO DO PREÇO
         # ==========================
-        fig_price = go.Figure()
+        preco_atual = dados["Close"].iloc[-1]
+        preco_inicial = dados["Close"].iloc[0]
+        variacao = preco_atual - preco_inicial
+        porcentagem = (variacao / preco_inicial) * 100
+        cor_variacao = "price-change-positive" if variacao > 0 else "price-change-negative"
+        simbolo_variacao = "▲" if variacao > 0 else "▼"
 
+        # Exibir a variação do preço
+        st.markdown(f"""
+            <p class="{cor_variacao}">{simbolo_variacao} {variacao:.2f} ({porcentagem:.2f}%) no período selecionado</p>
+        """, unsafe_allow_html=True)
+
+        # ==========================
+        # HISTÓRICO DE PREÇOS COM ESCALA PROPORCIONAL E COR DINÂMICA
+        # ==========================
+        cor_grafico = "#34A853" if variacao > 0 else "#EA4335"
+        transparencia = "rgba(52, 168, 83, 0.2)" if variacao > 0 else "rgba(234, 67, 53, 0.2)"
+
+        fig_price = go.Figure()
         fig_price.add_trace(go.Scatter(
             x=dados.index, 
             y=dados["Close"], 
             mode='lines',
             fill='tozeroy',
-            line=dict(color='#EA4335', width=2),  # Linha vermelha
-            fillcolor='rgba(234, 67, 53, 0.2)'
+            line=dict(color=cor_grafico, width=2),
+            fillcolor=transparencia
         ))
 
         # Ajuste da escala do eixo Y para evitar que o gráfico toque zero
@@ -121,7 +145,7 @@ if ticker_input:
             paper_bgcolor="rgba(0,0,0,0)",
             font=dict(color="black"),
             xaxis=dict(showgrid=False),
-            yaxis=dict(range=[min_price * 0.95, max_price * 1.05],  # Ajuste para evitar que a linha vá até zero
+            yaxis=dict(range=[min_price * 0.95, max_price * 1.05],
                        showgrid=True, gridcolor="rgba(200, 200, 200, 0.2)")
         )
 
