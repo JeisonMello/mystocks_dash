@@ -34,6 +34,37 @@ st.markdown("""
             font-size: 14px;
             color: #999999;
         }
+        .title-container {
+            font-size: 22px;
+            color: white;
+            font-weight: 600;
+        }
+        .period-container {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 8px 0;
+            gap: 15px;
+        }
+        .period-selector {
+            font-size: 16px;
+            font-weight: 600;
+            color: #ccc;
+            cursor: pointer;
+            padding: 4px 8px;
+            transition: color 0.2s ease-in-out, border-bottom 0.2s ease-in-out;
+            user-select: none;
+            background-color: transparent;
+            border-bottom: 3px solid transparent;
+        }
+        .period-selector:hover {
+            color: #ffffff;
+        }
+        .selected-period {
+            color: #ffffff;
+            border-bottom: 3px solid #4285F4;
+            padding-bottom: 2px;
+        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -54,6 +85,11 @@ if ticker_input:
         st.error("Ação não encontrada! Verifique o código e tente novamente.")
     else:
         company_name = stock_info.get("longName", ticker)
+        
+        # Exibir o título dinâmico
+        st.markdown(f"""
+            <div class="title-container">{ticker} · {company_name}</div>
+        """, unsafe_allow_html=True)
 
         # Preço atual e variação
         preco_atual = stock_info.get("regularMarketPrice", None)
@@ -86,6 +122,28 @@ if ticker_input:
             </div>
             <p class="timestamp">{horario_texto}</p>
         """, unsafe_allow_html=True)
+
+        # ==========================
+        # SELETOR DE PERÍODO FUNCIONAL
+        # ==========================
+        periodos = {
+            "1D": "1d", "5D": "5d", "1M": "1mo", "6M": "6mo",
+            "YTD": "ytd", "1Y": "1y", "5Y": "5y", "ALL": "max"
+        }
+
+        if "periodo_selecionado" not in st.session_state:
+            st.session_state["periodo_selecionado"] = "6M"
+
+        # Criar os botões de período
+        colunas = st.columns(len(periodos))
+        for i, (p, v) in enumerate(periodos.items()):
+            with colunas[i]:
+                if st.button(p, key=p):
+                    st.session_state["periodo_selecionado"] = p
+
+        # Atualizar dados conforme período selecionado
+        periodo = periodos[st.session_state["periodo_selecionado"]]
+        dados = stock.history(period=periodo)
 
         # ==========================
         # HISTÓRICO DE PREÇOS COM ESCALA CORRETA
