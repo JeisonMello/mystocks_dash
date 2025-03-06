@@ -117,7 +117,7 @@ if ticker_input:
             """, unsafe_allow_html=True)
 
         # ==========================
-        # HISTÓRICO DE PREÇOS COM PRECISÃO YAHOO
+        # HISTÓRICO DE PREÇOS COM ZOOM AUTOMÁTICO PARA ESCALA CORRETA
         # ==========================
         cor_grafico = "#34A853" if variacao > 0 else "#EA4335"
         transparencia = "rgba(52, 168, 83, 0.2)" if variacao > 0 else "rgba(234, 67, 53, 0.2)"
@@ -132,7 +132,7 @@ if ticker_input:
             fillcolor=transparencia
         ))
 
-        # Ajuste da escala e precisão conforme Yahoo Finance
+        # Aplicar zoom automático para manter a escala proporcional ao Yahoo Finance
         fig_price.update_layout(
             template="plotly_white",
             xaxis_title="Ano",
@@ -141,8 +141,9 @@ if ticker_input:
             plot_bgcolor="rgba(0,0,0,0)",
             paper_bgcolor="rgba(0,0,0,0)",
             font=dict(color="black"),
-            xaxis=dict(showgrid=False),
-            yaxis=dict(showgrid=True, gridcolor="rgba(200, 200, 200, 0.2)")
+            xaxis=dict(showgrid=False, range=[dados.index.min(), dados.index.max()]),
+            yaxis=dict(range=[dados["Close"].min() * 0.95, dados["Close"].max() * 1.05],
+                       showgrid=True, gridcolor="rgba(200, 200, 200, 0.2)")
         )
 
         st.plotly_chart(fig_price)
