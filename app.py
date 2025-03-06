@@ -34,6 +34,33 @@ st.markdown("""
             font-size: 14px;
             color: #999999;
         }
+        .period-container {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 8px 0;
+            gap: 15px;
+        }
+        .period-selector {
+            font-size: 16px;
+            font-weight: 600;
+            color: #ccc;
+            cursor: pointer;
+            padding: 4px 8px;
+            transition: color 0.2s ease-in-out, background 0.2s ease-in-out;
+            user-select: none;
+            background-color: transparent;
+            border-bottom: 3px solid transparent;
+        }
+        .period-selector:hover {
+            color: #ffffff;
+        }
+        .selected-period {
+            color: #ffffff;
+            border-bottom: 3px solid #4285F4;
+            padding-bottom: 2px;
+            background-color: transparent;
+        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -60,34 +87,37 @@ if ticker_input:
         """, unsafe_allow_html=True)
 
         # ==========================
-        # PREÇO ATUAL, VARIAÇÃO E HORÁRIO DE FECHAMENTO
+        # SELETOR DE PERÍODO HORIZONTAL (FUNCIONAL)
         # ==========================
-        preco_atual = stock_info.get("regularMarketPrice", None)
-        preco_anterior = stock_info.get("previousClose", None)
-        horario_fechamento = stock_info.get("regularMarketTime", None)
-        if preco_atual and preco_anterior:
-            variacao = preco_atual - preco_anterior
-            porcentagem = (variacao / preco_anterior) * 100
-            cor_variacao = "price-change-positive" if variacao > 0 else "price-change-negative"
-            simbolo_variacao = "▲" if variacao > 0 else "▼"
-            
-            st.markdown(f"""
-                <div class="price-container">
-                    {preco_atual:.2f} BRL 
-                    <span class="{cor_variacao}">{simbolo_variacao} {variacao:.2f} ({porcentagem:.2f}%)</span>
-                </div>
-            """, unsafe_allow_html=True)
+        periodos = {
+            "1D": "1d", "5D": "5d", "1M": "1mo", "6M": "6mo",
+            "YTD": "ytd", "1Y": "1y", "5Y": "5y", "ALL": "max"
+        }
 
-            if horario_fechamento:
-                from datetime import datetime
-                horario = datetime.utcfromtimestamp(horario_fechamento).strftime('%d %b, %I:%M %p GMT-3')
-                st.markdown(f"<p class='timestamp'>At close: {horario}</p>", unsafe_allow_html=True)
+        if "periodo_selecionado" not in st.session_state:
+            st.session_state["periodo_selecionado"] = "6M"
+
+        periodo_html = '<div class="period-container">'
+        for p, v in periodos.items():
+            selected_class = "selected-period" if p == st.session_state["periodo_selecionado"] else "period-selector"
+            periodo_html += f'<span class="{selected_class}" onclick="window.location.search='?period={p}'">{p}</span>'
+        periodo_html += '</div>'
+
+        st.markdown(periodo_html, unsafe_allow_html=True)
+
+        # Captura do período selecionado via query_params atualizado
+        period_selected = st.query_params.get("period", [st.session_state["periodo_selecionado"]])[0]
+        if period_selected in periodos:
+            st.session_state["periodo_selecionado"] = period_selected
+
+        periodo = periodos[st.session_state["periodo_selecionado"]]
+        dados = stock.history(period=periodo)
 
         # ==========================
         # HISTÓRICO DE PREÇOS COM ZOOM AUTOMÁTICO PARA ESCALA CORRETA
         # ==========================
-        cor_grafico = "#34A853" if variacao > 0 else "#EA4335"
-        transparencia = "rgba(52, 168, 83, 0.2)" if variacao > 0 else "rgba(234, 67, 53, 0.2)"
+        cor_grafico = "#34A853" if stock_info.get("regularMarketChange", 0) > 0 else "#EA4335"
+        transparencia = "rgba(52, 168, 83, 0.2)" if stock_info.get("regularMarketChange", 0) > 0 else "rgba(234, 67, 53, 0.2)"
 
         fig_price = go.Figure()
         fig_price.add_trace(go.Scatter(
@@ -101,9 +131,6 @@ if ticker_input:
 
         # Aplicar zoom automático para manter a escala proporcional ao Yahoo Finance
         fig_price.update_layout(
-            modebar={'remove': ['zoom', 'pan', 'reset', 'select', 'lasso', 'zoomIn', 'zoomOut', 'autoScale', 'home', 'toImage', 'fullscreen', 'resetScale']},
-            
-            modebar_remove=['zoom', 'pan', 'reset', 'select', 'lasso', 'zoomIn', 'zoomOut', 'autoScale', 'home'], 
             template="plotly_white",
             xaxis_title="Ano",
             yaxis_title="Preço (R$)",
