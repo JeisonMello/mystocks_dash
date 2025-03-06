@@ -113,7 +113,7 @@ if ticker_input:
             cor_variacao = "price-change-positive" if variacao > 0 else "price-change-negative"
             simbolo_variacao = "▲" if variacao > 0 else "▼"
             st.markdown(f"""
-                <p class="{cor_variacao}">{simbolo_variacao} {variacao:.2f} ({porcentagem:.2f}%) no período selecionado</p>
+                <p class="{cor_variacao}">{simbolo_variacao} {variacao:.2f} ({porcentagem:.2f}%)</p>
             """, unsafe_allow_html=True)
 
         # ==========================
