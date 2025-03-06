@@ -65,7 +65,7 @@ if ticker_input:
         st.error("Ação não encontrada! Verifique o código e tente novamente.")
     else:
         company_name = stock_info.get("longName", ticker)
-        market = stock_info.get("exchange", "Desconhecido")  # Define BVMF como padrão
+        market = ""  # Define BVMF como padrão
         st.markdown(f"""
             <div class='title-container'>HOME > {ticker} · {market}</div>
             <h2 class='stock-title'>{company_name}</h2>
