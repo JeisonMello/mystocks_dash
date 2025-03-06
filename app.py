@@ -34,32 +34,6 @@ st.markdown("""
             font-size: 14px;
             color: #999999;
         }
-        .period-container {
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            padding: 8px 0;
-            gap: 15px;
-        }
-        .period-selector {
-            font-size: 16px;
-            font-weight: 600;
-            color: #ccc;
-            cursor: pointer;
-            padding: 4px 8px;
-            transition: color 0.2s ease-in-out, border-bottom 0.2s ease-in-out;
-            user-select: none;
-            background-color: transparent;
-            border-bottom: 3px solid transparent;
-        }
-        .period-selector:hover {
-            color: #ffffff;
-        }
-        .selected-period {
-            color: #ffffff;
-            border-bottom: 3px solid #4285F4;
-            padding-bottom: 2px;
-        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -73,17 +47,18 @@ if ticker_input:
 
     # Buscar dados da ação
     stock = yf.Ticker(ticker)
-    stock_info = stock.info  
+    stock_info = stock.fast_info  # Usando fast_info para buscar dados mais rapidamente
     dados = stock.history(period="10y")
 
-    if not stock_info or "longName" not in stock_info:
+    if not stock_info:
         st.error("Ação não encontrada! Verifique o código e tente novamente.")
     else:
         company_name = stock_info.get("longName", ticker)
 
         # Preço atual e variação
-        preco_atual = stock_info.get("regularMarketPrice", None)
-        preco_anterior = stock_info.get("previousClose", None)
+        preco_atual = stock_info.get("last_price", None)  # Correção para sempre obter o último preço
+        preco_anterior = stock_info.get("previous_close", None)
+
         if preco_atual and preco_anterior:
             variacao = preco_atual - preco_anterior
             porcentagem = (variacao / preco_anterior) * 100
@@ -91,7 +66,7 @@ if ticker_input:
             simbolo_variacao = "▲" if variacao > 0 else "▼"
 
             # Horário do fechamento do mercado
-            horario_fechamento = stock_info.get("regularMarketTime", None)
+            horario_fechamento = stock_info.get("last_price_time", None)
             if horario_fechamento:
                 from datetime import datetime
                 horario = datetime.utcfromtimestamp(horario_fechamento).strftime('%d %b, %I:%M %p GMT-3')
@@ -108,31 +83,10 @@ if ticker_input:
             """, unsafe_allow_html=True)
 
         # ==========================
-        # SELETOR DE PERÍODO FUNCIONAL
-        # ==========================
-        periodos = {
-            "1D": "1d", "5D": "5d", "1M": "1mo", "6M": "6mo",
-            "YTD": "ytd", "1Y": "1y", "5Y": "5y", "ALL": "max"
-        }
-
-        if "periodo_selecionado" not in st.session_state:
-            st.session_state["periodo_selecionado"] = "6M"
-
-        colunas = st.columns(len(periodos))
-        for i, (p, v) in enumerate(periodos.items()):
-            with colunas[i]:
-                if st.button(p, key=p):
-                    st.session_state["periodo_selecionado"] = p
-
-        # Atualizar dados conforme período selecionado
-        periodo = periodos[st.session_state["periodo_selecionado"]]
-        dados = stock.history(period=periodo)
-
-        # ==========================
         # HISTÓRICO DE PREÇOS COM ESCALA CORRETA
         # ==========================
-        cor_grafico = "#34A853" if stock_info.get("regularMarketChange", 0) > 0 else "#EA4335"
-        transparencia = "rgba(52, 168, 83, 0.2)" if stock_info.get("regularMarketChange", 0) > 0 else "rgba(234, 67, 53, 0.2)"
+        cor_grafico = "#34A853" if variacao > 0 else "#EA4335"
+        transparencia = "rgba(52, 168, 83, 0.2)" if variacao > 0 else "rgba(234, 67, 53, 0.2)"
 
         fig_price = go.Figure()
         fig_price.add_trace(go.Scatter(
