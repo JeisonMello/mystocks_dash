@@ -103,22 +103,21 @@ if ticker_input:
         dados = stock.history(period=periodo)
 
         # ==========================
-        # CÁLCULO DE VARIAÇÃO DO PREÇO
+        # CÁLCULO DE VARIAÇÃO DO PREÇO COM PRECISÃO YAHOO
         # ==========================
-        preco_atual = dados["Close"].iloc[-1]
-        preco_inicial = dados["Close"].iloc[0]
-        variacao = preco_atual - preco_inicial
-        porcentagem = (variacao / preco_inicial) * 100
-        cor_variacao = "price-change-positive" if variacao > 0 else "price-change-negative"
-        simbolo_variacao = "▲" if variacao > 0 else "▼"
-
-        # Exibir a variação do preço
-        st.markdown(f"""
-            <p class="{cor_variacao}">{simbolo_variacao} {variacao:.2f} ({porcentagem:.2f}%) no período selecionado</p>
-        """, unsafe_allow_html=True)
+        preco_atual = stock_info.get("regularMarketPrice", None)
+        preco_anterior = stock_info.get("previousClose", None)
+        if preco_atual and preco_anterior:
+            variacao = preco_atual - preco_anterior
+            porcentagem = (variacao / preco_anterior) * 100
+            cor_variacao = "price-change-positive" if variacao > 0 else "price-change-negative"
+            simbolo_variacao = "▲" if variacao > 0 else "▼"
+            st.markdown(f"""
+                <p class="{cor_variacao}">{simbolo_variacao} {variacao:.2f} ({porcentagem:.2f}%) no período selecionado</p>
+            """, unsafe_allow_html=True)
 
         # ==========================
-        # HISTÓRICO DE PREÇOS COM ESCALA MANTIDA IGUAL AO YAHOO
+        # HISTÓRICO DE PREÇOS COM PRECISÃO YAHOO
         # ==========================
         cor_grafico = "#34A853" if variacao > 0 else "#EA4335"
         transparencia = "rgba(52, 168, 83, 0.2)" if variacao > 0 else "rgba(234, 67, 53, 0.2)"
@@ -133,7 +132,7 @@ if ticker_input:
             fillcolor=transparencia
         ))
 
-        # Ajustar eixo Y para manter a escala do Yahoo Finance
+        # Ajuste da escala e precisão conforme Yahoo Finance
         fig_price.update_layout(
             template="plotly_white",
             xaxis_title="Ano",
