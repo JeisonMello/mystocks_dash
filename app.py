@@ -118,7 +118,7 @@ if ticker_input:
         """, unsafe_allow_html=True)
 
         # ==========================
-        # HISTÓRICO DE PREÇOS COM ESCALA PROPORCIONAL E COR DINÂMICA
+        # HISTÓRICO DE PREÇOS COM ESCALA MANTIDA IGUAL AO YAHOO
         # ==========================
         cor_grafico = "#34A853" if variacao > 0 else "#EA4335"
         transparencia = "rgba(52, 168, 83, 0.2)" if variacao > 0 else "rgba(234, 67, 53, 0.2)"
@@ -133,9 +133,7 @@ if ticker_input:
             fillcolor=transparencia
         ))
 
-        # Ajuste da escala do eixo Y para evitar que o gráfico toque zero
-        min_price = dados["Close"].min()
-        max_price = dados["Close"].max()
+        # Ajustar eixo Y para manter a escala do Yahoo Finance
         fig_price.update_layout(
             template="plotly_white",
             xaxis_title="Ano",
@@ -145,8 +143,7 @@ if ticker_input:
             paper_bgcolor="rgba(0,0,0,0)",
             font=dict(color="black"),
             xaxis=dict(showgrid=False),
-            yaxis=dict(range=[min_price * 0.95, max_price * 1.05],
-                       showgrid=True, gridcolor="rgba(200, 200, 200, 0.2)")
+            yaxis=dict(showgrid=True, gridcolor="rgba(200, 200, 200, 0.2)")
         )
 
         st.plotly_chart(fig_price)
