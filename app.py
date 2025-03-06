@@ -36,6 +36,8 @@ st.markdown("""
             padding: 4px 8px;
             transition: color 0.2s ease-in-out, background 0.2s ease-in-out;
             user-select: none;
+            background-color: transparent;
+            border: none;
         }
         .period-selector:hover {
             color: #ffffff;
@@ -44,6 +46,8 @@ st.markdown("""
             color: #ffffff;
             border-bottom: 3px solid #4285F4;
             padding-bottom: 2px;
+            background-color: transparent;
+            border: none;
         }
     </style>
 """, unsafe_allow_html=True)
