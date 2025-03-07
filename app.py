@@ -131,12 +131,13 @@ if ticker_input:
         st.plotly_chart(fig_price)
 
         # ========================== 
-        # PARTE 2: HISTÓRICO DE DIVIDENDOS 
+        # PARTE 2: HISTÓRICO DE DIVIDENDOS (TOTALMENTE INDEPENDENTE)
         # ========================== 
         st.subheader("Histórico de Dividendos")
 
-        # Obter histórico de dividendos (NÃO TEM RELAÇÃO COM O GRÁFICO DE PREÇOS)
+        # Obter histórico de dividendos (Fixo para 10 anos, SEM RELAÇÃO COM O PREÇO)
         dividendos = stock.dividends
+        historico_dividendos = stock.history(period="10y")  # Dados exclusivos para dividendos
 
         if dividendos.empty:
             st.warning("Nenhum histórico de dividendos encontrado para esta ação.")
