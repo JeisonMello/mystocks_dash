@@ -1,39 +1,72 @@
-# Arquivo para histórico de dividendos
 import streamlit as st
-import yfinance as yf
+import requests
+from bs4 import BeautifulSoup
 import pandas as pd
 import plotly.graph_objects as go
-from datetime import datetime
 
-def carregar_grafico_dividendos(ticker):
-    stock = yf.Ticker(ticker)
-    dividendos = stock.dividends
+# ========================== 
+# PARTE 2: HISTÓRICO DE DIVIDENDOS (WEB SCRAPING) 
+# ========================== 
+st.subheader("💰 Histórico de Dividendos")
 
-    if dividendos.empty:
-        return None, None  # Retorna vazio se não houver dividendos
+# Entrada do usuário
+ticker = st.text_input("Digite o código da ação (ex: BBAS3, ITSA4, CSMG3):").upper()
 
-    dividendos = dividendos.reset_index()
-    dividendos["Ano"] = dividendos["Date"].dt.year
-    dividendos_por_ano = dividendos.groupby("Ano")["Dividends"].sum().reset_index()
+if ticker:
+    try:
+        url = f"https://statusinvest.com.br/acoes/{ticker}"
+        headers = {"User-Agent": "Mozilla/5.0"}
+        response = requests.get(url, headers=headers)
 
-    # Criar range fixo de anos (últimos 10 anos)
-    anos_referencia = list(range(datetime.now().year - 9, datetime.now().year + 1))
-    dividendos_por_ano = dividendos_por_ano.set_index("Ano").reindex(anos_referencia, fill_value=0).reset_index()
+        # Verifica se a página foi carregada corretamente
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.text, "html.parser")
 
-    fig_dividendos = go.Figure()
-    fig_dividendos.add_trace(go.Bar(
-        x=dividendos_por_ano["Ano"],
-        y=dividendos_por_ano["Dividends"],
-        text=[f"{x:.2f}" for x in dividendos_por_ano["Dividends"]],
-        textposition="auto",
-        marker_color="#34A853"
-    ))
+            # Busca os dividendos pagos por ano
+            tabela_dividendos = soup.find_all("div", class_="carousel__item")
+            
+            dados_dividendos = []
+            for item in tabela_dividendos:
+                ano = item.find("h3").text.strip()  # Ano do dividendo
+                valor = item.find("strong").text.strip().replace(",", ".")  # Valor do dividendo
+                
+                if ano.isnumeric():
+                    dados_dividendos.append({"Ano": int(ano), "Dividendo": float(valor)})
 
-    fig_dividendos.update_layout(
-        title=f"Dividendos Pagos por Ano - {ticker}",
-        xaxis_title="Ano",
-        yaxis_title="Dividendos (BRL)",
-        template="plotly_dark"
-    )
+            # Converte para DataFrame
+            df_dividendos = pd.DataFrame(dados_dividendos)
 
-    return fig_dividendos, dividendos_por_ano
+            if not df_dividendos.empty:
+                df_dividendos = df_dividendos.sort_values(by="Ano", ascending=True)
+
+                # Criar gráfico de dividendos
+                fig_dividendos = go.Figure()
+                fig_dividendos.add_trace(go.Bar(
+                    x=df_dividendos["Ano"],
+                    y=df_dividendos["Dividendo"],
+                    text=[f"{x:.2f}" for x in df_dividendos["Dividendo"]],
+                    textposition='auto',
+                    marker_color="#34A853"
+                ))
+
+                fig_dividendos.update_layout(
+                    title="Dividendos Pagos por Ano",
+                    xaxis_title="Ano",
+                    yaxis_title="Dividendos (R$)",
+                    template="plotly_dark"
+                )
+
+                st.plotly_chart(fig_dividendos)
+
+                # Exibir tabela de dividendos
+                st.write("📊 **Histórico de Dividendos por Ano**")
+                st.dataframe(df_dividendos.rename(columns={"Ano": "Ano", "Dividendo": "Dividendos (R$)"}))
+
+            else:
+                st.warning("❌ Nenhum dividendo encontrado para esta ação no Status Invest.")
+
+        else:
+            st.error("Erro ao acessar os dados do Status Invest. Tente novamente mais tarde.")
+
+    except Exception as e:
+        st.error(f"Erro ao processar os dividendos: {e}")
