@@ -88,6 +88,51 @@ if ticker_input:
                 <p class="timestamp">{horario_texto}</p>
             """, unsafe_allow_html=True)
 
+        # Seletor de período funcional
+        periodos = {
+            "1D": "1d", "5D": "5d", "1M": "1mo", "6M": "6mo",
+            "YTD": "ytd", "1Y": "1y", "5Y": "5y", "ALL": "max"
+        }
+
+        if "periodo_selecionado" not in st.session_state:
+            st.session_state["periodo_selecionado"] = "6M"
+
+        colunas = st.columns(len(periodos))
+        for i, (p, v) in enumerate(periodos.items()):
+            with colunas[i]:
+                if st.button(p, key=p):
+                    st.session_state["periodo_selecionado"] = p
+
+        # Atualizar dados conforme período selecionado
+        periodo = periodos[st.session_state["periodo_selecionado"]]
+        dados = stock.history(period=periodo)
+
+        # Gráfico de histórico de preços
+        cor_grafico = "#34A853" if stock_info.get("regularMarketChange", 0) > 0 else "#EA4335"
+        transparencia = "rgba(52, 168, 83, 0.2)" if stock_info.get("regularMarketChange", 0) > 0 else "rgba(234, 67, 53, 0.2)"
+
+        fig_price = go.Figure()
+        fig_price.add_trace(go.Scatter(
+            x=dados.index, 
+            y=dados["Close"], 
+            mode='lines',
+            fill='tozeroy',
+            line=dict(color=cor_grafico, width=2),
+            fillcolor=transparencia,
+            hovertemplate=f'<b>%{{y:.2f}} {moeda}</b><br>%{{x|%d %b %y}}<extra></extra>'
+        ))
+
+        fig_price.update_layout(
+            template="plotly_white",
+            title="Histórico de Preços",
+            xaxis_title="Data",
+            yaxis_title=f"Preço ({moeda})",
+            plot_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor="rgba(0,0,0,0)"
+        )
+
+        st.plotly_chart(fig_price)
+
         # ========================== 
         # PARTE 2: HISTÓRICO DE DIVIDENDOS 
         # ========================== 
@@ -95,31 +140,24 @@ if ticker_input:
 
         # Obter histórico de dividendos
         dividendos = stock.dividends
-        historico = stock.history(period="10y")  # Histórico de preços para cálculo de dividend yield
+        historico = stock.history(period="10y")
 
         if dividendos.empty:
             st.warning("Nenhum histórico de dividendos encontrado para esta ação.")
         else:
-            # Criar coluna de ano para agrupar os dividendos por ano
             dividendos = dividendos.reset_index()
             dividendos["Ano"] = dividendos["Date"].dt.year
-            
-            # Agrupar dividendos por ano
             dividendos_por_ano = dividendos.groupby("Ano")["Dividends"].sum().reset_index()
-            
-            # Calcular o preço médio anual da ação
+
             historico["Ano"] = historico.index.year
             preco_medio_anual = historico.groupby("Ano")["Close"].mean().reset_index()
-            
-            # Combinar dividendos com o preço médio da ação
+
             resultado = pd.merge(dividendos_por_ano, preco_medio_anual, on="Ano", how="right")
             resultado["Dividend Yield (%)"] = (resultado["Dividends"] / resultado["Close"]) * 100
-            resultado = resultado.fillna(0)  # Preencher anos sem dividendos com 0
+            resultado = resultado.fillna(0)
 
-            # Manter apenas os últimos 10 anos
             resultado = resultado.sort_values(by="Ano", ascending=False).head(10).sort_values(by="Ano")
 
-            # Criar gráfico de barras dos dividendos pagos por ano
             fig_dividendos = go.Figure()
             fig_dividendos.add_trace(go.Bar(
                 x=resultado["Ano"],
@@ -133,14 +171,11 @@ if ticker_input:
                 title="Dividendos Pagos por Ano",
                 xaxis_title="Ano",
                 yaxis_title=f"Dividendos ({moeda})",
-                template="plotly_dark",
-                plot_bgcolor="rgba(0,0,0,0)",
-                paper_bgcolor="rgba(0,0,0,0)"
+                template="plotly_dark"
             )
 
             st.plotly_chart(fig_dividendos)
 
-            # Exibir tabela com os dados formatados
             st.write("**Histórico de Dividendos por Ano**")
             st.dataframe(resultado.rename(columns={"Ano": "Ano", "Dividends": "Dividendos Pagos", "Close": "Preço Médio", "Dividend Yield (%)": "Yield (%)"}))
 
