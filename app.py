@@ -103,9 +103,9 @@ if ticker_input:
                 if st.button(p, key=p):
                     st.session_state["periodo_selecionado"] = p
 
-        # Atualizar dados conforme período selecionado
+        # Atualizar dados conforme período selecionado (SOMENTE PARA PREÇOS)
         periodo = periodos[st.session_state["periodo_selecionado"]]
-        dados_preco = stock.history(period=periodo)  # APENAS PARA O GRÁFICO DE PREÇOS
+        dados_preco = stock.history(period=periodo)  
 
         # Gráfico de histórico de preços
         cor_grafico = "#34A853" if stock_info.get("regularMarketChange", 0) > 0 else "#EA4335"
@@ -118,17 +118,14 @@ if ticker_input:
             mode='lines',
             fill='tozeroy',
             line=dict(color=cor_grafico, width=2),
-            fillcolor=transparencia,
-            hovertemplate=f'<b>%{{y:.2f}} {moeda}</b><br>%{{x|%d %b %y}}<extra></extra>'
+            fillcolor=transparencia
         ))
 
         fig_price.update_layout(
-            template="plotly_white",
             title="Histórico de Preços",
             xaxis_title="Data",
             yaxis_title=f"Preço ({moeda})",
-            plot_bgcolor="rgba(0,0,0,0)",
-            paper_bgcolor="rgba(0,0,0,0)"
+            template="plotly_white"
         )
 
         st.plotly_chart(fig_price)
@@ -138,9 +135,8 @@ if ticker_input:
         # ========================== 
         st.subheader("Histórico de Dividendos")
 
-        # Obter histórico de dividendos SEM RELAÇÃO COM O GRÁFICO DE PREÇOS
+        # Obter histórico de dividendos (NÃO TEM RELAÇÃO COM O GRÁFICO DE PREÇOS)
         dividendos = stock.dividends
-        historico_dividendos = stock.history(period="10y")  # Independente do gráfico de preços
 
         if dividendos.empty:
             st.warning("Nenhum histórico de dividendos encontrado para esta ação.")
@@ -149,20 +145,12 @@ if ticker_input:
             dividendos["Ano"] = dividendos["Date"].dt.year
             dividendos_por_ano = dividendos.groupby("Ano")["Dividends"].sum().reset_index()
 
-            historico_dividendos["Ano"] = historico_dividendos.index.year
-            preco_medio_anual = historico_dividendos.groupby("Ano")["Close"].mean().reset_index()
-
-            resultado = pd.merge(dividendos_por_ano, preco_medio_anual, on="Ano", how="right")
-            resultado["Dividend Yield (%)"] = (resultado["Dividends"] / resultado["Close"]) * 100
-            resultado = resultado.fillna(0)
-
-            resultado = resultado.sort_values(by="Ano", ascending=False).head(10).sort_values(by="Ano")
-
+            # Criar gráfico de barras independente
             fig_dividendos = go.Figure()
             fig_dividendos.add_trace(go.Bar(
-                x=resultado["Ano"],
-                y=resultado["Dividends"],
-                text=[f"{x:.2f}" for x in resultado["Dividends"]],
+                x=dividendos_por_ano["Ano"],
+                y=dividendos_por_ano["Dividends"],
+                text=[f"{x:.2f}" for x in dividendos_por_ano["Dividends"]],
                 textposition='auto',
                 marker_color="#34A853"
             ))
@@ -176,8 +164,9 @@ if ticker_input:
 
             st.plotly_chart(fig_dividendos)
 
+            # Exibir tabela
             st.write("**Histórico de Dividendos por Ano**")
-            st.dataframe(resultado.rename(columns={"Ano": "Ano", "Dividends": "Dividendos Pagos", "Close": "Preço Médio", "Dividend Yield (%)": "Yield (%)"}))
+            st.dataframe(dividendos_por_ano.rename(columns={"Ano": "Ano", "Dividends": "Dividendos Pagos"}))
 
     except Exception as e:
         st.error("Ação não localizada, insira o código de uma ação existente.")
