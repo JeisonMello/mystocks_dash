@@ -14,12 +14,4 @@ if ticker:
     st.plotly_chart(fig_precos)
 
     # Exibir Gráfico de Dividendos
-    st.subheader("💰 Histórico de Dividendos")
-    fig_dividendos, dados_dividendos = carregar_grafico_dividendos(ticker)
-
-    if fig_dividendos:
-        st.plotly_chart(fig_dividendos)
-        st.write("**Tabela de Dividendos por Ano**")
-        st.dataframe(dados_dividendos.rename(columns={"Ano": "Ano", "Dividends": "Dividendos Pagos"}))
-    else:
-        st.warning("Nenhum histórico de dividendos encontrado para esta ação.")
+   
