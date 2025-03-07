@@ -88,7 +88,7 @@ if ticker_input:
                 <p class="timestamp">{horario_texto}</p>
             """, unsafe_allow_html=True)
 
-        # Seletor de período funcional
+        # Seletor de período funcional (SOMENTE PARA HISTÓRICO DE PREÇOS)
         periodos = {
             "1D": "1d", "5D": "5d", "1M": "1mo", "6M": "6mo",
             "YTD": "ytd", "1Y": "1y", "5Y": "5y", "ALL": "max"
@@ -105,7 +105,7 @@ if ticker_input:
 
         # Atualizar dados conforme período selecionado
         periodo = periodos[st.session_state["periodo_selecionado"]]
-        dados = stock.history(period=periodo)
+        dados_preco = stock.history(period=periodo)  # APENAS PARA O GRÁFICO DE PREÇOS
 
         # Gráfico de histórico de preços
         cor_grafico = "#34A853" if stock_info.get("regularMarketChange", 0) > 0 else "#EA4335"
@@ -113,8 +113,8 @@ if ticker_input:
 
         fig_price = go.Figure()
         fig_price.add_trace(go.Scatter(
-            x=dados.index, 
-            y=dados["Close"], 
+            x=dados_preco.index, 
+            y=dados_preco["Close"], 
             mode='lines',
             fill='tozeroy',
             line=dict(color=cor_grafico, width=2),
@@ -138,9 +138,9 @@ if ticker_input:
         # ========================== 
         st.subheader("Histórico de Dividendos")
 
-        # Obter histórico de dividendos
+        # Obter histórico de dividendos SEM RELAÇÃO COM O GRÁFICO DE PREÇOS
         dividendos = stock.dividends
-        historico = stock.history(period="10y")
+        historico_dividendos = stock.history(period="10y")  # Independente do gráfico de preços
 
         if dividendos.empty:
             st.warning("Nenhum histórico de dividendos encontrado para esta ação.")
@@ -149,8 +149,8 @@ if ticker_input:
             dividendos["Ano"] = dividendos["Date"].dt.year
             dividendos_por_ano = dividendos.groupby("Ano")["Dividends"].sum().reset_index()
 
-            historico["Ano"] = historico.index.year
-            preco_medio_anual = historico.groupby("Ano")["Close"].mean().reset_index()
+            historico_dividendos["Ano"] = historico_dividendos.index.year
+            preco_medio_anual = historico_dividendos.groupby("Ano")["Close"].mean().reset_index()
 
             resultado = pd.merge(dividendos_por_ano, preco_medio_anual, on="Ano", how="right")
             resultado["Dividend Yield (%)"] = (resultado["Dividends"] / resultado["Close"]) * 100
