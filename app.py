@@ -38,7 +38,7 @@ if ticker_input:
         moeda = stock_info.get("currency", "N/A")  
 
         # ========================== 
-        # 🔹 BLOCO 1: HISTÓRICO DE PREÇOS 
+        # 🔹 BLOCO 1: HISTÓRICO DE PREÇOS (INDEPENDENTE)
         # ========================== 
         st.markdown(f"<h2 style='color: white; font-size: 22px;'>{company_name} ({ticker})</h2>", unsafe_allow_html=True)
 
@@ -105,12 +105,12 @@ if ticker_input:
         st.plotly_chart(fig_price)
 
         # ========================== 
-        # 🔹 BLOCO 2: HISTÓRICO DE DIVIDENDOS (INDEPENDENTE)
+        # 🔹 BLOCO 2: HISTÓRICO DE DIVIDENDOS (INDEPENDENTE E FIXO)
         # ========================== 
         st.subheader("Histórico de Dividendos")
 
-        # Obter histórico de dividendos (NÃO RELACIONADO AO HISTÓRICO DE PREÇOS)
-        dividendos = stock.dividends
+        # Obter histórico de dividendos (Fixo para 10 anos, SEM RELAÇÃO COM O PREÇO)
+        dividendos = stock.dividends.copy()  # Cópia para evitar problemas de referência
 
         if dividendos.empty:
             st.warning("Nenhum histórico de dividendos encontrado para esta ação.")
