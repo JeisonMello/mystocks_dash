@@ -80,6 +80,7 @@ if ticker_input:
         st.error("Ação não encontrada! Verifique o código e tente novamente.")
     else:
         company_name = stock_info.get("longName", ticker)
+        moeda = stock_info.get("currency", "N/A")  # Obtém a moeda da ação
 
         # Preço atual e variação
         preco_atual = stock_info.get("regularMarketPrice", None)
@@ -101,7 +102,7 @@ if ticker_input:
 
             st.markdown(f"""
                 <div class="price-container">
-                    {preco_atual:.2f} BRL 
+                    {preco_atual:.2f} {moeda} 
                     <span class="{cor_variacao}">{simbolo_variacao} {variacao:.2f} ({porcentagem:.2f}%)</span>
                 </div>
                 <p class="timestamp">{horario_texto}</p>
@@ -142,7 +143,7 @@ if ticker_input:
             fill='tozeroy',
             line=dict(color=cor_grafico, width=2),
             fillcolor=transparencia,
-            hovertemplate='<b>%{y:.2f}</b><br>%{x|%d %b %y}<extra></extra>'
+            hovertemplate=f'<b>%{{y:.2f}} {moeda}</b><br>%{{x|%d %b %y}}<extra></extra>'
         ))
 
         fig_price.update_layout(
