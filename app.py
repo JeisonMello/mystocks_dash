@@ -3,37 +3,16 @@ import yfinance as yf
 import pandas as pd
 import plotly.graph_objects as go
 
-# Estilização CSS para alinhar com o Google Finance
+# Estilização CSS
 st.markdown("""
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
-        
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #0e0e0e;
-        }
+        body { font-family: 'Inter', sans-serif; background-color: #0e0e0e; }
         .price-container {
-            font-size: 36px;
-            font-weight: bold;
-            color: white;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            font-size: 36px; font-weight: bold; color: white; display: flex; align-items: center; gap: 10px;
         }
-        .price-change-positive {
-            color: #34A853 !important;
-            font-size: 24px !important;
-            font-weight: bold;
-        }
-        .price-change-negative {
-            color: #EA4335 !important;
-            font-size: 24px !important;
-            font-weight: bold;
-        }
-        .timestamp {
-            font-size: 14px;
-            color: #999999;
-        }
+        .price-change-positive { color: #34A853 !important; font-size: 24px !important; font-weight: bold; }
+        .price-change-negative { color: #EA4335 !important; font-size: 24px !important; font-weight: bold; }
+        .timestamp { font-size: 14px; color: #999999; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -52,13 +31,13 @@ if ticker_input:
 
         # Verificar se os dados são válidos
         if not stock_info or "longName" not in stock_info:
-            raise ValueError("Ação não localizada")  # Dispara erro controlado
+            raise ValueError("Ação não localizada")  
 
         company_name = stock_info.get("longName", ticker)
-        moeda = stock_info.get("currency", "N/A")  # Obtém a moeda da ação
+        moeda = stock_info.get("currency", "N/A")  
 
         # ========================== 
-        # PARTE 1: HISTÓRICO DE PREÇOS 
+        # PARTE 1: HISTÓRICO DE PREÇOS
         # ========================== 
         st.markdown(f"<h2 style='color: white; font-size: 22px;'>{company_name} ({ticker})</h2>", unsafe_allow_html=True)
 
@@ -109,16 +88,13 @@ if ticker_input:
 
         # Gráfico de histórico de preços
         cor_grafico = "#34A853" if stock_info.get("regularMarketChange", 0) > 0 else "#EA4335"
-        transparencia = "rgba(52, 168, 83, 0.2)" if stock_info.get("regularMarketChange", 0) > 0 else "rgba(234, 67, 53, 0.2)"
 
         fig_price = go.Figure()
         fig_price.add_trace(go.Scatter(
             x=dados_preco.index, 
             y=dados_preco["Close"], 
             mode='lines',
-            fill='tozeroy',
-            line=dict(color=cor_grafico, width=2),
-            fillcolor=transparencia
+            line=dict(color=cor_grafico, width=2)
         ))
 
         fig_price.update_layout(
@@ -137,14 +113,18 @@ if ticker_input:
 
         # Obter histórico de dividendos (Fixo para 10 anos, SEM RELAÇÃO COM O PREÇO)
         dividendos = stock.dividends
-        historico_dividendos = stock.history(period="10y")  # Dados exclusivos para dividendos
 
         if dividendos.empty:
             st.warning("Nenhum histórico de dividendos encontrado para esta ação.")
         else:
+            # Processar dividendos corretamente
             dividendos = dividendos.reset_index()
             dividendos["Ano"] = dividendos["Date"].dt.year
             dividendos_por_ano = dividendos.groupby("Ano")["Dividends"].sum().reset_index()
+
+            # Ajustar para os últimos 10 anos
+            anos_referencia = list(range(datetime.now().year - 9, datetime.now().year + 1))
+            dividendos_por_ano = dividendos_por_ano.set_index("Ano").reindex(anos_referencia, fill_value=0).reset_index()
 
             # Criar gráfico de barras independente
             fig_dividendos = go.Figure()
