@@ -2,6 +2,7 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd
 import plotly.graph_objects as go
+from datetime import datetime
 
 # Estilização CSS
 st.markdown("""
@@ -37,7 +38,7 @@ if ticker_input:
         moeda = stock_info.get("currency", "N/A")  
 
         # ========================== 
-        # PARTE 1: HISTÓRICO DE PREÇOS
+        # 🔹 BLOCO 1: HISTÓRICO DE PREÇOS 
         # ========================== 
         st.markdown(f"<h2 style='color: white; font-size: 22px;'>{company_name} ({ticker})</h2>", unsafe_allow_html=True)
 
@@ -53,7 +54,6 @@ if ticker_input:
 
             horario_fechamento = stock_info.get("regularMarketTime", None)
             if horario_fechamento:
-                from datetime import datetime
                 horario = datetime.utcfromtimestamp(horario_fechamento).strftime('%d %b, %I:%M %p GMT-3')
                 horario_texto = f"At close: {horario}"
             else:
@@ -87,14 +87,12 @@ if ticker_input:
         dados_preco = stock.history(period=periodo)  
 
         # Gráfico de histórico de preços
-        cor_grafico = "#34A853" if stock_info.get("regularMarketChange", 0) > 0 else "#EA4335"
-
         fig_price = go.Figure()
         fig_price.add_trace(go.Scatter(
             x=dados_preco.index, 
             y=dados_preco["Close"], 
             mode='lines',
-            line=dict(color=cor_grafico, width=2)
+            line=dict(color="#34A853", width=2)
         ))
 
         fig_price.update_layout(
@@ -107,11 +105,11 @@ if ticker_input:
         st.plotly_chart(fig_price)
 
         # ========================== 
-        # PARTE 2: HISTÓRICO DE DIVIDENDOS (TOTALMENTE INDEPENDENTE)
+        # 🔹 BLOCO 2: HISTÓRICO DE DIVIDENDOS (INDEPENDENTE)
         # ========================== 
         st.subheader("Histórico de Dividendos")
 
-        # Obter histórico de dividendos (Fixo para 10 anos, SEM RELAÇÃO COM O PREÇO)
+        # Obter histórico de dividendos (NÃO RELACIONADO AO HISTÓRICO DE PREÇOS)
         dividendos = stock.dividends
 
         if dividendos.empty:
@@ -122,7 +120,7 @@ if ticker_input:
             dividendos["Ano"] = dividendos["Date"].dt.year
             dividendos_por_ano = dividendos.groupby("Ano")["Dividends"].sum().reset_index()
 
-            # Ajustar para os últimos 10 anos
+            # Criar anos fixos para os últimos 10 anos
             anos_referencia = list(range(datetime.now().year - 9, datetime.now().year + 1))
             dividendos_por_ano = dividendos_por_ano.set_index("Ano").reindex(anos_referencia, fill_value=0).reset_index()
 
