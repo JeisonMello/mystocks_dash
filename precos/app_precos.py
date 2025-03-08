@@ -64,27 +64,29 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Entrada do usuário
-ticker_input = st.text_input("Digite o código da ação (ex: AAPL, TSLA, PETR4.SA):")
+ticker_input = st.text_input("Digite o código da ação (ex: BBAS3, ITSA4, CSMG3):")
 
 if ticker_input:
     ticker = ticker_input.upper()
     if not ticker.endswith(".SA") and len(ticker) == 5:
         ticker += ".SA"
 
-    # Buscar dados da ação
-    stock = yf.Ticker(ticker)
-    stock_info = stock.info  
-    dados = stock.history(period="10y")
+    try:
+        # Buscar dados da ação
+        stock = yf.Ticker(ticker)
+        stock_info = stock.info  
 
-    if not stock_info or "longName" not in stock_info:
-        st.error("Ação não encontrada! Verifique o código e tente novamente.")
-    else:
+        # Verificar se os dados são válidos
+        if not stock_info or "longName" not in stock_info:
+            raise ValueError("Ação não localizada")  # Dispara erro controlado
+
         company_name = stock_info.get("longName", ticker)
         moeda = stock_info.get("currency", "N/A")  # Obtém a moeda da ação
 
         # Preço atual e variação
         preco_atual = stock_info.get("regularMarketPrice", None)
         preco_anterior = stock_info.get("previousClose", None)
+
         if preco_atual and preco_anterior:
             variacao = preco_atual - preco_anterior
             porcentagem = (variacao / preco_anterior) * 100
@@ -99,6 +101,9 @@ if ticker_input:
                 horario_texto = f"At close: {horario}"
             else:
                 horario_texto = ""
+
+            # Exibir nome da empresa acima do valor da ação
+            st.markdown(f"<h2 style='color: white; font-size: 22px;'>{company_name} ({ticker})</h2>", unsafe_allow_html=True)
 
             st.markdown(f"""
                 <div class="price-container">
@@ -159,3 +164,6 @@ if ticker_input:
         )
 
         st.plotly_chart(fig_price)
+
+    except Exception as e:
+        st.error("Ação não localizada, insira o código de uma ação existente.")
