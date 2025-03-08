@@ -5,33 +5,27 @@ import streamlit as st
 
 def carregar_grafico_precos(ticker):
     """
-    Função que busca os dados históricos de preços da ação e gera um gráfico interativo.
-    Retorna um gráfico Plotly e os detalhes formatados da ação.
+    Busca os dados históricos de preços da ação e gera um gráfico interativo,
+    mantendo todos os detalhes visuais do código original.
     """
 
     try:
-        st.write(f"🔍 Buscando dados para: {ticker}")  # LOG de depuração
-
-        # Ajusta o ticker caso seja de uma ação brasileira e não tenha o sufixo .SA
+        # Ajusta o ticker para ações brasileiras
         if not ticker.endswith(".SA") and len(ticker) == 5:
             ticker += ".SA"
-            st.write(f"🔄 Ajustando ticker para: {ticker}")
 
         stock = yf.Ticker(ticker)
         stock_info = stock.info
 
         if not stock_info or "longName" not in stock_info:
-            st.write(f"⚠️ Erro: Ação não encontrada no Yahoo Finance: {ticker}")
             return None, None
 
         company_name = stock_info.get("longName", ticker)
         moeda = stock_info.get("currency", "N/A")  
-
         preco_atual = stock_info.get("regularMarketPrice", None)
         preco_anterior = stock_info.get("previousClose", None)
 
         if preco_atual is None or preco_anterior is None:
-            st.write("⚠️ Erro ao buscar preços atuais.")
             return None, None
 
         variacao = preco_atual - preco_anterior
@@ -56,10 +50,27 @@ def carregar_grafico_precos(ticker):
             <p class="timestamp">{horario_texto}</p>
         """
 
-        # 📌 Buscar dados históricos de preços
-        dados = stock.history(period="6mo")
+        # ==========================
+        # SELETOR DE PERÍODO FUNCIONAL
+        # ==========================
+        periodos = {
+            "1D": "1d", "5D": "5d", "1M": "1mo", "6M": "6mo",
+            "YTD": "ytd", "1Y": "1y", "5Y": "5y", "ALL": "max"
+        }
+
+        if "periodo_selecionado" not in st.session_state:
+            st.session_state["periodo_selecionado"] = "6M"
+
+        colunas = st.columns(len(periodos))
+        for i, (p, v) in enumerate(periodos.items()):
+            with colunas[i]:
+                if st.button(p, key=p):
+                    st.session_state["periodo_selecionado"] = p
+
+        periodo = periodos[st.session_state["periodo_selecionado"]]
+        dados = stock.history(period=periodo)
+
         if dados.empty:
-            st.write("⚠️ Nenhum dado de histórico retornado.")
             return detalhes_acao, None
 
         cor_grafico = "#34A853" if variacao > 0 else "#EA4335"
@@ -81,16 +92,14 @@ def carregar_grafico_precos(ticker):
             margin=dict(l=40, r=40, t=40, b=40),
             plot_bgcolor="rgba(0,0,0,0)",
             paper_bgcolor="rgba(0,0,0,0)",
-            font=dict(color="black"),
+            font=dict(color="white"),
             xaxis=dict(showgrid=False, range=[dados.index.min(), dados.index.max()]),
             yaxis=dict(range=[dados["Close"].min() * 0.95, dados["Close"].max() * 1.05],
                        showgrid=True, gridcolor="rgba(200, 200, 200, 0.2)"),
             hoverlabel=dict(font_size=16)
         )
 
-        st.write("✅ Dados carregados com sucesso!")  # LOG de sucesso
         return detalhes_acao, fig_price  
 
     except Exception as e:
-        st.write(f"❌ Erro inesperado: {e}")
         return None, None  
