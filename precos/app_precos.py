@@ -1,118 +1,54 @@
-def carregar_grafico_precos(ticker):
-import streamlit as st
 import yfinance as yf
-import pandas as pd
 import plotly.graph_objects as go
+import pandas as pd
+import streamlit as st
 
-# Estilização CSS para alinhar com o Google Finance
-st.markdown("""
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
-        
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #0e0e0e;
-        }
-        .price-container {
-            font-size: 36px;
-            font-weight: bold;
-            color: white;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .price-change-positive {
-            color: #34A853 !important;
-            font-size: 24px !important;
-            font-weight: bold;
-        }
-        .price-change-negative {
-            color: #EA4335 !important;
-            font-size: 24px !important;
-            font-weight: bold;
-        }
-        .timestamp {
-            font-size: 14px;
-            color: #999999;
-        }
-        .period-container {
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            padding: 8px 0;
-            gap: 15px;
-        }
-        .period-selector {
-            font-size: 16px;
-            font-weight: 600;
-            color: #ccc;
-            cursor: pointer;
-            padding: 4px 8px;
-            transition: color 0.2s ease-in-out, border-bottom 0.2s ease-in-out;
-            user-select: none;
-            background-color: transparent;
-            border-bottom: 3px solid transparent;
-        }
-        .period-selector:hover {
-            color: #ffffff;
-        }
-        .selected-period {
-            color: #ffffff;
-            border-bottom: 3px solid #4285F4;
-            padding-bottom: 2px;
-        }
-    </style>
-""", unsafe_allow_html=True)
-
-# Entrada do usuário
-ticker_input = st.text_input("Digite o código da ação (ex: BBAS3, ITSA4, CSMG3):")
-
-if ticker_input:
-    ticker = ticker_input.upper()
-    if not ticker.endswith(".SA") and len(ticker) == 5:
-        ticker += ".SA"
+def carregar_grafico_precos(ticker):
+    """
+    Busca os dados históricos de preços da ação e gera um gráfico interativo
+    com opção de seleção de período e zoom dinâmico no gráfico.
+    """
 
     try:
-        # Buscar dados da ação
-        stock = yf.Ticker(ticker)
-        stock_info = stock.info  
+        # Ajusta o ticker para ações brasileiras
+        if not ticker.endswith(".SA") and len(ticker) == 5:
+            ticker += ".SA"
 
-        # Verificar se os dados são válidos
+        stock = yf.Ticker(ticker)
+        stock_info = stock.info
+
         if not stock_info or "longName" not in stock_info:
-            raise ValueError("Ação não localizada")  # Dispara erro controlado
+            return None, None
 
         company_name = stock_info.get("longName", ticker)
-        moeda = stock_info.get("currency", "N/A")  # Obtém a moeda da ação
-
-        # Preço atual e variação
+        moeda = stock_info.get("currency", "N/A")  
         preco_atual = stock_info.get("regularMarketPrice", None)
         preco_anterior = stock_info.get("previousClose", None)
 
-        if preco_atual and preco_anterior:
-            variacao = preco_atual - preco_anterior
-            porcentagem = (variacao / preco_anterior) * 100
-            cor_variacao = "price-change-positive" if variacao > 0 else "price-change-negative"
-            simbolo_variacao = "▲" if variacao > 0 else "▼"
+        if preco_atual is None or preco_anterior is None:
+            return None, None
 
-            # Horário do fechamento do mercado
-            horario_fechamento = stock_info.get("regularMarketTime", None)
-            if horario_fechamento:
-                from datetime import datetime
-                horario = datetime.utcfromtimestamp(horario_fechamento).strftime('%d %b, %I:%M %p GMT-3')
-                horario_texto = f"At close: {horario}"
-            else:
-                horario_texto = ""
+        variacao = preco_atual - preco_anterior
+        porcentagem = (variacao / preco_anterior) * 100
+        cor_variacao = "price-change-positive" if variacao > 0 else "price-change-negative"
+        simbolo_variacao = "▲" if variacao > 0 else "▼"
 
-            # Exibir nome da empresa acima do valor da ação
-            st.markdown(f"<h2 style='color: white; font-size: 22px;'>{company_name} ({ticker})</h2>", unsafe_allow_html=True)
+        horario_fechamento = stock_info.get("regularMarketTime", None)
+        if horario_fechamento:
+            from datetime import datetime
+            horario = datetime.utcfromtimestamp(horario_fechamento).strftime('%d %b, %I:%M %p GMT-3')
+            horario_texto = f"At close: {horario}"
+        else:
+            horario_texto = ""
 
-            st.markdown(f"""
-                <div class="price-container">
-                    {preco_atual:.2f} {moeda} 
-                    <span class="{cor_variacao}">{simbolo_variacao} {variacao:.2f} ({porcentagem:.2f}%)</span>
-                </div>
-                <p class="timestamp">{horario_texto}</p>
-            """, unsafe_allow_html=True)
+        detalhes_acao = f"""
+            <h2 style='color: white; font-size: 22px;'>{company_name} ({ticker})</h2>
+            <div class="price-container">
+                {preco_atual:.2f} {moeda} 
+                <span class="{cor_variacao}">{simbolo_variacao} {variacao:.2f} ({porcentagem:.2f}%)</span>
+            </div>
+            <p class="timestamp">{horario_texto}</p>
+        """
 
         # ==========================
         # SELETOR DE PERÍODO FUNCIONAL
@@ -131,15 +67,14 @@ if ticker_input:
                 if st.button(p, key=p):
                     st.session_state["periodo_selecionado"] = p
 
-        # Atualizar dados conforme período selecionado
         periodo = periodos[st.session_state["periodo_selecionado"]]
         dados = stock.history(period=periodo)
 
-        # ==========================
-        # HISTÓRICO DE PREÇOS COM ESCALA CORRETA
-        # ==========================
-        cor_grafico = "#34A853" if stock_info.get("regularMarketChange", 0) > 0 else "#EA4335"
-        transparencia = "rgba(52, 168, 83, 0.2)" if stock_info.get("regularMarketChange", 0) > 0 else "rgba(234, 67, 53, 0.2)"
+        if dados.empty:
+            return detalhes_acao, None
+
+        cor_grafico = "#34A853" if variacao > 0 else "#EA4335"
+        transparencia = "rgba(52, 168, 83, 0.2)" if variacao > 0 else "rgba(234, 67, 53, 0.2)"
 
         fig_price = go.Figure()
         fig_price.add_trace(go.Scatter(
@@ -157,14 +92,14 @@ if ticker_input:
             margin=dict(l=40, r=40, t=40, b=40),
             plot_bgcolor="rgba(0,0,0,0)",
             paper_bgcolor="rgba(0,0,0,0)",
-            font=dict(color="black"),
+            font=dict(color="white"),
             xaxis=dict(showgrid=False, range=[dados.index.min(), dados.index.max()]),
             yaxis=dict(range=[dados["Close"].min() * 0.95, dados["Close"].max() * 1.05],
                        showgrid=True, gridcolor="rgba(200, 200, 200, 0.2)"),
             hoverlabel=dict(font_size=16)
         )
 
-        st.plotly_chart(fig_price)
+        return detalhes_acao, fig_price  
 
     except Exception as e:
-        st.error("Ação não localizada, insira o código de uma ação existente.")
+        return None, None  
