@@ -13,23 +13,26 @@ cursor.execute('''
 conn.commit()
 conn.close()
 
+def check_email_exists(email):
+    """Verifica se o e-mail já está cadastrado no banco de dados."""
+    conn = sqlite3.connect("users.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT email FROM users WHERE email = ?", (email,))
+    user = cursor.fetchone()
+    conn.close()
+    return user is not None  # Retorna True se o e-mail já existir
+
 def add_user(email, password):
-    """Adiciona um novo usuário ao banco de dados."""
+    """Adiciona um novo usuário ao banco de dados, verificando se o e-mail já existe."""
+    if check_email_exists(email):
+        return "exists"  # Retorna que o e-mail já está cadastrado
+
     try:
         conn = sqlite3.connect("users.db")
         cursor = conn.cursor()
         cursor.execute("INSERT INTO users (email, password) VALUES (?, ?)", (email, password))
         conn.commit()
         conn.close()
-        return True
-    except:
-        return False
-
-def check_user(email, password):
-    """Verifica se o usuário existe e a senha está correta."""
-    conn = sqlite3.connect("users.db")
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE email = ? AND password = ?", (email, password))
-    user = cursor.fetchone()
-    conn.close()
-    return user is not None
+        return "success"  # Retorna sucesso ao cadastrar
+    except Exception as e:
+        return f"error: {str(e)}"  # Retorna erro específico
