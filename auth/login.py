@@ -14,7 +14,10 @@ def login():
         password = st.text_input("Senha", type="password")
 
         if st.button("Entrar"):
-            st.success(f"Bem-vindo, {email}!")
+           if st.button("Entrar"):
+    st.session_state['logged_in'] = True  # Define que o usuário está logado
+    st.success(f"Bem-vindo, {email}!")
+    st.rerun()  # Atualiza a página automaticamente
 
     elif escolha == "Criar Conta":
         new_email = st.text_input("E-mail")
