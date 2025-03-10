@@ -36,3 +36,12 @@ def add_user(email, password):
         return "success"  # Retorna sucesso ao cadastrar
     except Exception as e:
         return f"error: {str(e)}"  # Retorna erro específico
+
+def delete_user(email):
+    """Exclui um usuário do banco de dados pelo e-mail."""
+    conn = sqlite3.connect("users.db")
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM users WHERE email = ?", (email,))
+    conn.commit()
+    conn.close()
+    return "Usuário excluído com sucesso!"
