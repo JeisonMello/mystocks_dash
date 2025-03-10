@@ -1,5 +1,7 @@
+import time
 import streamlit as st
 from auth.database import add_user, check_email_exists
+from streamlit.runtime.scriptrunner import RerunException
 
 def login():
     """Tela de login do sistema."""
@@ -13,7 +15,7 @@ def login():
         password = st.text_input("Senha", type="password")
 
         if st.button("Entrar"):
-            st.success(f"Bem-vindo, {email}!")  # Aqui você pode conectar com um banco de dados
+            st.success(f"Bem-vindo, {email}!")
 
     elif escolha == "Criar Conta":
         new_email = st.text_input("E-mail")
@@ -23,10 +25,11 @@ def login():
         if st.button("Registrar"):
             if new_password != confirm_password:
                 st.error("As senhas não coincidem!")
-            elif add_user(new_email, new_password) == "success":
-                st.success("Conta criada com sucesso! Agora você pode fazer login.")
             else:
-                st.error("Erro ao criar conta. Esse e-mail já está cadastrado.")
-
-if __name__ == "__main__":
-    login()
+                resultado = add_user(new_email, new_password)
+                if resultado == "success":
+                    st.success("Conta criada com sucesso! Redirecionando para o login...")
+                    time.sleep(2)  # Aguarda 2 segundos antes de atualizar
+                    raise RerunException  # Redireciona para recarregar a página
+                else:
+                    st.error("Erro ao criar conta. Esse e-mail já está cadastrado.")
