@@ -1,6 +1,6 @@
 import streamlit as st
 from auth.login import login
-from admin.dashboard import admin_dashboard  # Importando o painel admin
+from admin.dashboard import admin_dashboard  # Importando painel admin corretamente
 
 if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
