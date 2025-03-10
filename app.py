@@ -1,7 +1,6 @@
 import streamlit as st
-from auth.login import login
+from auth.login import login  # Verificar esse caminho
 
-# Se não estiver logado, mostrar tela de login
 if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
 
