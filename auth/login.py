@@ -1,4 +1,3 @@
-import time
 import streamlit as st
 from auth.database import add_user, check_email_exists
 
@@ -14,10 +13,9 @@ def login():
         password = st.text_input("Senha", type="password")
 
         if st.button("Entrar"):
-           if st.button("Entrar"):
-    st.session_state['logged_in'] = True  # Define que o usuário está logado
-    st.success(f"Bem-vindo, {email}!")
-    st.rerun()  # Atualiza a página automaticamente
+            st.session_state['logged_in'] = True  # Define que o usuário está logado
+            st.success(f"Bem-vindo, {email}!")
+            st.rerun()  # Atualiza a página automaticamente
 
     elif escolha == "Criar Conta":
         new_email = st.text_input("E-mail")
@@ -31,7 +29,6 @@ def login():
                 resultado = add_user(new_email, new_password)
                 if resultado == "success":
                     st.success("Conta criada com sucesso! Redirecionando para o login...")
-                    time.sleep(2)  # Aguarda 2 segundos antes de redirecionar
-                    st.rerun()  # Agora recarrega a página corretamente
+                    st.rerun()  # Atualiza a página após o registro
                 else:
                     st.error("Erro ao criar conta. Esse e-mail já está cadastrado.")
