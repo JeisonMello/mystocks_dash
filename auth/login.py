@@ -1,35 +1,38 @@
-import streamlit as st
-from auth.database import add_user, check_user
+import sqlite3
 
-def login():
-    st.title("Login")
+# Criar o banco de dados e a tabela se não existirem
+conn = sqlite3.connect("users.db")
+cursor = conn.cursor()
+cursor.execute('''
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL
+    )
+''')
+conn.commit()
+conn.close()
 
-    menu = ["Entrar", "Criar Conta"]
-    escolha = st.selectbox("Escolha uma opção", menu)
+def check_email_exists(email):
+    """Verifica se o e-mail já está cadastrado no banco de dados."""
+    conn = sqlite3.connect("users.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT email FROM users WHERE email = ?", (email,))
+    user = cursor.fetchone()
+    conn.close()
+    return user is not None  # Retorna True se o e-mail já existir
 
-    if escolha == "Entrar":
-        email = st.text_input("E-mail")
-        password = st.text_input("Senha", type="password")
+def add_user(email, password):
+    """Adiciona um novo usuário ao banco de dados, verificando se o e-mail já existe."""
+    if check_email_exists(email):
+        return "exists"  # Retorna que o e-mail já está cadastrado
 
-        if st.button("Entrar"):
-            if check_user(email, password):
-                st.success(f"Bem-vindo, {email}!")
-                st.session_state['logged_in'] = True
-            else:
-                st.error("E-mail ou senha incorretos.")
-
-    elif escolha == "Criar Conta":
-        new_email = st.text_input("E-mail")
-        new_password = st.text_input("Escolha uma senha", type="password")
-        confirm_password = st.text_input("Confirme sua senha", type="password")
-
-        if st.button("Registrar"):
-            if new_password != confirm_password:
-                st.error("As senhas não coincidem!")
-            elif add_user(new_email, new_password):
-                st.success("Conta criada com sucesso! Agora você pode fazer login.")
-            else:
-                st.error("Erro ao criar conta. Esse e-mail já está cadastrado.")
-
-if __name__ == "__main__":
-    login()
+    try:
+        conn = sqlite3.connect("users.db")
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO users (email, password) VALUES (?, ?)", (email, password))
+        conn.commit()
+        conn.close()
+        return "success"  # Retorna sucesso ao cadastrar
+    except Exception as e:
+        return f"error: {str(e)}"  # Retorna erro específico
