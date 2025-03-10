@@ -2,14 +2,19 @@ import streamlit as st
 import sys
 import os
 
-# Depuração: Mostrar diretórios acessíveis no Streamlit
-st.write("Diretórios disponíveis:", sys.path)
+# Obtém o diretório base do projeto
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Adiciona o diretório 'auth/' manualmente ao sys.path
+AUTH_DIR = os.path.join(BASE_DIR, "auth")
+if AUTH_DIR not in sys.path:
+    sys.path.append(AUTH_DIR)
 
 try:
-    from auth.login import login  # Importação padrão
+    from login import login  # Agora importa diretamente da pasta auth/
     st.success("Importação de auth.login bem-sucedida!")
 except ModuleNotFoundError as e:
-    st.error(f"Erro ao importar auth.login: {e}")
+    st.error(f"Erro ao importar login.py: {e}")
 
 if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
