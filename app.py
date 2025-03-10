@@ -2,10 +2,13 @@ import streamlit as st
 import sys
 import os
 
-# Garantir que o diretório base seja reconhecido
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# Adiciona o diretório raiz ao caminho do Python
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
-from auth.login import login  # Importando diretamente a função login
+try:
+    from auth.login import login  # Importação padrão
+except ModuleNotFoundError:
+    st.error("Erro ao importar auth.login. Verifique o caminho e o nome dos arquivos.")
 
 if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
