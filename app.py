@@ -1,13 +1,16 @@
 import streamlit as st
-import sys
-import os
+from auth.login import login  # Agora funciona corretamente!
 
-# Adiciona manualmente auth ao sys.path
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
+if 'logged_in' not in st.session_state:
+    st.session_state['logged_in'] = False
 
-try:
-    from auth import login  # Apenas teste de importação
-    st.success("Importação bem-sucedida!")
-except Exception as e:
-    st.error(f"Erro na importação: {e}")
-    st.stop()
+if not st.session_state['logged_in']:
+    login()  # Agora chamamos a função login corretamente
+else:
+    st.sidebar.title("Navegação")
+    pagina = st.sidebar.selectbox("Escolha uma página", ["Dashboard", "Histórico"])
+    
+    if pagina == "Dashboard":
+        st.write("Aqui vai o código do Dashboard")
+    elif pagina == "Histórico":
+        st.write("Aqui vai o código do Histórico")
