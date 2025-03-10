@@ -1,7 +1,6 @@
 import time
 import streamlit as st
 from auth.database import add_user, check_email_exists
-from streamlit.runtime.scriptrunner import RerunException
 
 def login():
     """Tela de login do sistema."""
@@ -29,7 +28,7 @@ def login():
                 resultado = add_user(new_email, new_password)
                 if resultado == "success":
                     st.success("Conta criada com sucesso! Redirecionando para o login...")
-                    time.sleep(2)  # Aguarda 2 segundos antes de atualizar
-                    raise RerunException  # Redireciona para recarregar a página
+                    time.sleep(2)  # Aguarda 2 segundos antes de redirecionar
+                    st.rerun()  # Agora recarrega a página corretamente
                 else:
                     st.error("Erro ao criar conta. Esse e-mail já está cadastrado.")
