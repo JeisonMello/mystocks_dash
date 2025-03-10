@@ -1,16 +1,14 @@
 import streamlit as st
-import auth.login as login  # Importando o módulo, e não a função diretamente
+import sys
+import os
 
-if 'logged_in' not in st.session_state:
-    st.session_state['logged_in'] = False
+# Garantir que auth/ está no sys.path
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-if not st.session_state['logged_in']:
-    login.login()  # Agora chamamos a função login() dentro do módulo login
-else:
-    st.sidebar.title("Navegação")
-    pagina = st.sidebar.selectbox("Escolha uma página", ["Dashboard", "Histórico"])
-    
-    if pagina == "Dashboard":
-        st.write("Aqui vai o código do Dashboard")
-    elif pagina == "Histórico":
-        st.write("Aqui vai o código do Histórico")
+# Testar importação do módulo `auth.login`
+try:
+    import auth.login  # Apenas testando a importação do módulo
+    st.success("Módulo `auth.login` foi importado corretamente!")
+except Exception as e:
+    st.error(f"Erro ao importar `auth.login`: {e}")
+    st.stop()
