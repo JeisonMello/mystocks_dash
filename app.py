@@ -1,11 +1,11 @@
 import streamlit as st
-from auth.login import login  # Importando a função corretamente
+from auth.login import login  # Importando a função login corretamente
 
 if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
 
 if not st.session_state['logged_in']:
-    login()  # Chamando a função corretamente
+    login()  # Chamando a função login corretamente
 else:
     st.sidebar.title("Navegação")
     pagina = st.sidebar.selectbox("Escolha uma página", ["Dashboard", "Histórico"])
