@@ -9,7 +9,9 @@ if not st.session_state['logged_in']:
     login()
 else:
     st.sidebar.title("Navegação")
-    pagina = st.sidebar.selectbox("Escolha uma página", ["Admin"])
+    pagina = st.sidebar.selectbox("Escolha uma página", ["Dashboard", "Admin"])
 
-    if pagina == "Admin":
+    if pagina == "Dashboard":
+        st.write("📊 Bem-vindo ao painel do usuário!")
+    elif pagina == "Admin":
         admin_dashboard()
