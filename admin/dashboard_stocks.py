@@ -1,7 +1,12 @@
 import streamlit as st
 import pandas as pd
 import yfinance as yf
-from auth.database_stocks import add_stock, get_stocks, delete_stock, update_stock
+from auth.database_stocks import add_stock, get_stocks, delete_stock
+
+def format_company_name(name):
+    """Remove sufixos como ON, PN, NM do nome da empresa para manter apenas o nome limpo."""
+    palavras_excluir = ["ON", "PN", "NM", "EDJ", "N1", "N2", "UNT", "CI"]
+    return " ".join([word for word in name.split() if word not in palavras_excluir])
 
 def get_stock_data(papel):
     """Busca os dados da ação na API do Yahoo Finance."""
@@ -11,7 +16,7 @@ def get_stock_data(papel):
         info = stock.info
 
         return {
-            "nome": info.get("shortName", "Nome Desconhecido").split(" ")[0],  # Apenas o primeiro nome
+            "nome": format_company_name(info.get("shortName", "Nome Desconhecido")),
             "preco": round(info.get("regularMarketPrice", 0.0), 2),
             "yield": round(info.get("trailingAnnualDividendYield", 0.0) * 100, 2) if info.get("trailingAnnualDividendYield") else 0.0,
             "setor": info.get("sector", "Setor Desconhecido")
@@ -23,23 +28,29 @@ def get_stock_data(papel):
 def dashboard_stocks():
     st.title("📊 Dashboard - Ações Monitoradas")
 
-    # Exibir tabela de ações cadastradas de forma visualmente agradável
+    # Buscar ações cadastradas
     stocks = get_stocks()
+    
     if stocks:
-        df = pd.DataFrame(stocks, columns=["ID", "Papel", "Empresa", "Preço", "Custava", "Yield", "Teto", "Setor", "Estratégia", "Obs."])
-        df = df.drop(columns=["ID"])  # Oculta a coluna ID para melhor visualização
+        df = pd.DataFrame(stocks, columns=["ID", "Papel", "Empresa", "Preço", "Custava", "Yield", "Teto", "Setor", "Estratégia", "Obs"])
+        df = df.drop(columns=["ID"])  # Remover a coluna ID para exibição
+        
+        # Formatando os valores
+        df["Preço"] = df["Preço"].apply(lambda x: f"R$ {x:.2f}")
+        df["Custava"] = df["Custava"].apply(lambda x: f"R$ {x:.2f}")
+        df["Yield"] = df["Yield"].apply(lambda x: f"{x:.2f}%")
+        df["Teto"] = df["Teto"].apply(lambda x: f"R$ {x:.2f}")
 
-        # Aplicar estilização para linhas alternadas
+        # Aplicar estilo para alternância de cores
         def highlight_rows(row):
-            return ['background-color: #2c2c2c' if i % 2 == 0 else '' for i in range(len(row))]
+            return ["background-color: #333333; color: white" if row.name % 2 == 0 else "" for _ in row]
 
-        df_styled = df.style.format({"Preço": "R$ {:.2f}", "Custava": "R$ {:.2f}", "Yield": "{:.2f}%", "Teto": "R$ {:.2f}"}).apply(highlight_rows, axis=1)
-        st.dataframe(df_styled)
-
+        st.dataframe(df.style.apply(highlight_rows, axis=1))
+    
     else:
         st.warning("Nenhuma ação cadastrada ainda.")
 
-    # Botão para exibir o formulário de adição
+    # Expansível para adicionar nova ação
     with st.expander("➕ Adicionar Nova Ação"):
         st.subheader("Adicionar Nova Ação")
         papel = st.text_input("Papel (ex: CSMG3)").upper()
@@ -66,7 +77,7 @@ def dashboard_stocks():
             else:
                 st.error("Papel inválido ou não encontrado na API.")
 
-    # Seção de remoção de ações
+    # Seção para remover ação
     with st.expander("🗑️ Remover Ação"):
         papel_excluir = st.text_input("Digite o código do papel para remover").upper()
         if st.button("Excluir"):
