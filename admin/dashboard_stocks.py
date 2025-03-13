@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import yfinance as yf
-from auth.database_stocks import add_stock, get_stocks, delete_stock
+from auth.database_stocks import add_stock, get_stocks, delete_stock, update_stock
 
 def get_stock_data(papel):
     """Busca os dados da ação na API do Yahoo Finance."""
@@ -23,41 +23,55 @@ def get_stock_data(papel):
 def dashboard_stocks():
     st.title("📊 Dashboard - Ações Monitoradas")
 
-    # Exibir tabela de ações cadastradas de forma visualmente agradável
+    # Exibir tabela de ações cadastradas
     stocks = get_stocks()
     if stocks:
         df = pd.DataFrame(stocks, columns=["ID", "Papel", "Nome", "Preço", "Custava", "Yield", "Preço Teto", "Setor", "Estratégia", "Observação"])
-        df = df.drop(columns=["ID"])  # Oculta a coluna ID da tabela
-        st.dataframe(df.style.set_properties(**{'text-align': 'center'}))  # Formatação elegante
+        df = df.drop(columns=["ID"])  # Oculta a coluna ID
+        for i, row in df.iterrows():
+            with st.expander(f"📌 {row['Papel']} - {row['Nome']}"):
+                st.write(f"**Preço Atual:** R$ {row['Preço']:.2f}")
+                st.write(f"**Yield:** {row['Yield']:.2f}%")
+                st.write(f"**Setor:** {row['Setor']}")
+                st.write(f"**Estratégia:** {row['Estratégia']}")
+                st.write(f"**Observação:** {row['Observação']}")
+
+                # Botão para ativar edição
+                if st.button(f"✏️ Editar {row['Papel']}", key=f"edit_{row['Papel']}"):
+                    st.session_state["edit_papel"] = row['Papel']
+                    st.rerun()
+
     else:
         st.warning("Nenhuma ação cadastrada ainda.")
 
-    # Botão para exibir o formulário de adição
-    with st.expander("➕ Adicionar Nova Ação"):
-        st.subheader("Adicionar Nova Ação")
-        papel = st.text_input("Papel (ex: CSMG3)").upper()
+    # Seção de Edição
+    if "edit_papel" in st.session_state:
+        papel_editar = st.session_state["edit_papel"]
+        st.subheader(f"✏️ Editando Ação: {papel_editar}")
 
-        if papel:
-            stock_info = get_stock_data(papel)
-            nome = stock_info["nome"]
-            preco = stock_info["preco"]
-            yield_val = stock_info["yield"]
-            setor = stock_info["setor"]
-        else:
-            nome, preco, yield_val, setor = "", 0.0, 0.0, ""
+        # Buscar os dados atuais para edição
+        stock_atual = next((s for s in stocks if s[1] == papel_editar), None)
+        if stock_atual:
+            _, papel, nome, preco, custava, yield_val, preco_teto, setor, estrategia, obs = stock_atual
 
-        custava = st.number_input("Custava", min_value=0.0, format="%.2f")
-        preco_teto = st.number_input("Preço Teto", min_value=0.0, format="%.2f")
-        estrategia = st.selectbox("Estratégia", ["Dividends", "Value Invest"])
-        obs = st.text_input("Observação")
+            novo_nome = st.text_input("Nome", nome)
+            novo_preco = st.number_input("Preço Atual", value=preco, format="%.2f")
+            novo_custava = st.number_input("Custava", value=custava, format="%.2f")
+            novo_yield = st.number_input("Yield", value=yield_val, format="%.2f")
+            novo_preco_teto = st.number_input("Preço Teto", value=preco_teto, format="%.2f")
+            novo_setor = st.text_input("Setor", setor)
+            nova_estrategia = st.selectbox("Estratégia", ["Dividends", "Value Invest"], index=["Dividends", "Value Invest"].index(estrategia))
+            nova_obs = st.text_area("Observação", obs)
 
-        if st.button("Adicionar Ação"):
-            if papel and nome and preco > 0:
-                resultado = add_stock(papel, nome, preco, custava, yield_val, preco_teto, setor, estrategia, obs)
-                st.success(resultado)  # Mensagem de adicionado ou atualizado
+            if st.button("💾 Salvar Alterações"):
+                resultado = update_stock(papel, novo_nome, novo_preco, novo_custava, novo_yield, novo_preco_teto, novo_setor, nova_estrategia, nova_obs)
+                st.success(resultado)
+                del st.session_state["edit_papel"]  # Remove o estado de edição
                 st.rerun()
-            else:
-                st.error("Papel inválido ou não encontrado na API.")
+
+            if st.button("❌ Cancelar"):
+                del st.session_state["edit_papel"]
+                st.rerun()
 
     # Seção de remoção de ações
     with st.expander("🗑️ Remover Ação"):
@@ -66,18 +80,3 @@ def dashboard_stocks():
             delete_stock(papel_excluir)
             st.warning(f"Ação {papel_excluir} removida!")
             st.rerun()
-
-def update_stock(papel, nome, preco, custava, yield_val, preco_teto, setor, estrategia, obs):
-    """Atualiza os dados de uma ação no banco de dados."""
-    conn = sqlite3.connect("stocks.db")
-    cursor = conn.cursor()
-    cursor.execute('''
-        UPDATE stocks 
-        SET nome = ?, preco = ?, custava = ?, yield = ?, preco_teto = ?, setor = ?, estrategia = ?, obs = ?
-        WHERE papel = ?
-    ''', (nome, preco, custava, yield_val, preco_teto, setor, estrategia, obs, papel))
-    
-    conn.commit()
-    conn.close()
-    
-    return f"Ação {papel} atualizada com sucesso!"
