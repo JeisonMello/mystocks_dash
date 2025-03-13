@@ -1,6 +1,6 @@
 
 import streamlit as st
-from auth.database import delete_user
+from auth.database_stocks import add_stock, get_stocks, delete_stock  # Agora está correto!
 
 def admin_dashboard():
     """Painel de Administração"""
