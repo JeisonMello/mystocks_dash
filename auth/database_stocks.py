@@ -25,30 +25,34 @@ def create_stocks_table():
 create_stocks_table()
 
 def add_stock(papel, nome, preco, custava, yield_val, preco_teto, setor, estrategia, obs):
-    """Adiciona ou atualiza uma ação no banco de dados."""
+    """Adiciona uma nova ação ou atualiza uma já existente no banco de dados."""
     conn = sqlite3.connect("stocks.db")
     cursor = conn.cursor()
 
     # Verifica se a ação já existe no banco de dados
-    cursor.execute("SELECT papel FROM stocks WHERE papel = ?", (papel,))
+    cursor.execute("SELECT * FROM stocks WHERE papel = ?", (papel,))
     existing_stock = cursor.fetchone()
 
     if existing_stock:
-        # Se a ação já existe, faz uma atualização dos valores
+        # Atualiza os dados caso a ação já exista
         cursor.execute('''
             UPDATE stocks 
             SET nome = ?, preco = ?, custava = ?, yield = ?, preco_teto = ?, setor = ?, estrategia = ?, obs = ?
             WHERE papel = ?
         ''', (nome, preco, custava, yield_val, preco_teto, setor, estrategia, obs, papel))
+        msg = f"Ação {papel} já existia e foi atualizada com sucesso!"
     else:
-        # Se não existir, insere uma nova ação
+        # Insere nova ação caso ainda não exista
         cursor.execute('''
             INSERT INTO stocks (papel, nome, preco, custava, yield, preco_teto, setor, estrategia, obs)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (papel, nome, preco, custava, yield_val, preco_teto, setor, estrategia, obs))
+        msg = f"Ação {papel} adicionada com sucesso!"
 
     conn.commit()
     conn.close()
+    
+    return msg  # Retorna uma mensagem indicando se foi adicionado ou atualizado
 
 def get_stocks():
     """Retorna todas as ações cadastradas."""
