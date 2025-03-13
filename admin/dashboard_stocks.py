@@ -66,3 +66,18 @@ def dashboard_stocks():
             delete_stock(papel_excluir)
             st.warning(f"Ação {papel_excluir} removida!")
             st.rerun()
+
+def update_stock(papel, nome, preco, custava, yield_val, preco_teto, setor, estrategia, obs):
+    """Atualiza os dados de uma ação no banco de dados."""
+    conn = sqlite3.connect("stocks.db")
+    cursor = conn.cursor()
+    cursor.execute('''
+        UPDATE stocks 
+        SET nome = ?, preco = ?, custava = ?, yield = ?, preco_teto = ?, setor = ?, estrategia = ?, obs = ?
+        WHERE papel = ?
+    ''', (nome, preco, custava, yield_val, preco_teto, setor, estrategia, obs, papel))
+    
+    conn.commit()
+    conn.close()
+    
+    return f"Ação {papel} atualizada com sucesso!"
