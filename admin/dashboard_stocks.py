@@ -1,86 +1,135 @@
-import streamlit as st
-import pandas as pd
-import yfinance as yf
-from auth.database_stocks import add_stock, get_stocks, delete_stock
+import sqlite3
+
+def create_stocks_table():
+    """Cria a tabela de ações no banco de dados se não existir."""
+    conn = sqlite3.connect("stocks.db")
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS stocks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            papel TEXT UNIQUE NOT NULL,
+            nome TEXT,
+            preco REAL,
+            custava REAL,
+            yield REAL,
+            preco_teto REAL,
+            setor TEXT,
+            estrategia TEXT,
+            obs TEXT
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+# Criar a tabela ao importar o módulo
+create_stocks_table()
 
 def format_company_name(name):
-    """Remove sufixos como ON, PN, NM do nome da empresa para manter apenas o nome limpo."""
-    palavras_excluir = ["ON", "PN", "NM", "EDJ", "N1", "N2", "UNT", "CI"]
+    """Remove sufixos como ON, PN, NM, etc., do nome da empresa."""
+    palavras_excluir = ["ON", "PN", "NM", "EDJ", "N1", "N2", "UNT", "CI", "EJ"]
     return " ".join([word for word in name.split() if word not in palavras_excluir])
 
-def get_stock_data(papel):
-    """Busca os dados da ação na API do Yahoo Finance."""
+def add_stock(papel, nome, preco, custava, yield_val, preco_teto, setor, estrategia, obs):
+    """Adiciona uma nova ação ao banco de dados."""
+    conn = sqlite3.connect("stocks.db")
+    cursor = conn.cursor()
+
+    # Formatar o nome da empresa antes de salvar
+    nome_formatado = format_company_name(nome)
+
     try:
-        papel_formatado = papel + ".SA"  # Yahoo Finance usa ".SA" para ações brasileiras
-        stock = yf.Ticker(papel_formatado)
-        info = stock.info
+        cursor.execute('''
+            INSERT INTO stocks (papel, nome, preco, custava, yield, preco_teto, setor, estrategia, obs)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (papel, nome_formatado, preco, custava, yield_val, preco_teto, setor, estrategia, obs))
+        conn.commit()
+        msg = f"Ação {papel} adicionada com sucesso!"
+    except sqlite3.IntegrityError:
+        msg = f"Erro: A ação {papel} já está cadastrada."
+    finally:
+        conn.close()
 
-        return {
-            "nome": format_company_name(info.get("shortName", "Nome Desconhecido")),
-            "preco": round(info.get("regularMarketPrice", 0.0), 2),
-            "yield": round(info.get("trailingAnnualDividendYield", 0.0) * 100, 2) if info.get("trailingAnnualDividendYield") else 0.0,
-            "setor": info.get("sector", "Setor Desconhecido")
-        }
-    except Exception as e:
-        print(f"Erro ao buscar dados para {papel}: {e}")
-        return {"nome": "", "preco": 0.0, "yield": 0.0, "setor": ""}
+    return msg
 
-def dashboard_stocks():
-    st.title("📊 Dashboard - Ações Monitoradas")
+def update_stock(papel, nome, preco, custava, yield_val, preco_teto, setor, estrategia, obs):
+    """Atualiza os dados de uma ação existente no banco de dados."""
+    conn = sqlite3.connect("stocks.db")
+    cursor = conn.cursor()
 
-    # Buscar ações cadastradas
-    stocks = get_stocks()
-    
-    if stocks:
-        df = pd.DataFrame(stocks, columns=["ID", "Papel", "Empresa", "Preço", "Custava", "Yield", "Teto", "Setor", "Estratégia", "Obs"])
-        df = df.drop(columns=["ID"])  # Remover a coluna ID para exibição
-        
-        # Formatando os valores
-        df["Preço"] = df["Preço"].apply(lambda x: f"R$ {x:.2f}")
-        df["Custava"] = df["Custava"].apply(lambda x: f"R$ {x:.2f}")
-        df["Yield"] = df["Yield"].apply(lambda x: f"{x:.2f}%")
-        df["Teto"] = df["Teto"].apply(lambda x: f"R$ {x:.2f}")
+    try:
+        # Verifica se a ação existe antes de atualizar
+        cursor.execute("SELECT * FROM stocks WHERE papel = ?", (papel,))
+        existing_stock = cursor.fetchone()
 
-        # Aplicar estilo para alternância de cores
-        def highlight_rows(row):
-            return ["background-color: #333333; color: white" if row.name % 2 == 0 else "" for _ in row]
-
-        st.dataframe(df.style.apply(highlight_rows, axis=1))
-    
-    else:
-        st.warning("Nenhuma ação cadastrada ainda.")
-
-    # Expansível para adicionar nova ação
-    with st.expander("➕ Adicionar Nova Ação"):
-        st.subheader("Adicionar Nova Ação")
-        papel = st.text_input("Papel (ex: CSMG3)").upper()
-
-        if papel:
-            stock_info = get_stock_data(papel)
-            nome = stock_info["nome"]
-            preco = stock_info["preco"]
-            yield_val = stock_info["yield"]
-            setor = stock_info["setor"]
+        if existing_stock:
+            nome_formatado = format_company_name(nome)
+            cursor.execute('''
+                UPDATE stocks 
+                SET nome = ?, preco = ?, custava = ?, yield = ?, preco_teto = ?, setor = ?, estrategia = ?, obs = ?
+                WHERE papel = ?
+            ''', (nome_formatado, preco, custava, yield_val, preco_teto, setor, estrategia, obs, papel))
+            conn.commit()
+            msg = f"Ação {papel} foi atualizada com sucesso!"
         else:
-            nome, preco, yield_val, setor = "", 0.0, 0.0, ""
+            msg = f"Erro: Ação {papel} não encontrada no banco de dados."
 
-        custava = st.number_input("Custava", min_value=0.0, format="%.2f")
-        preco_teto = st.number_input("Preço Teto", min_value=0.0, format="%.2f")
-        estrategia = st.selectbox("Estratégia", ["Dividends", "Value Invest"])
-        obs = st.text_input("Observação")
+    except sqlite3.Error as e:
+        msg = f"Erro ao atualizar ação {papel}: {e}"
 
-        if st.button("Adicionar Ação"):
-            if papel and nome and preco > 0:
-                add_stock(papel, nome, preco, custava, yield_val, preco_teto, setor, estrategia, obs)
-                st.success(f"Ação {papel} adicionada com sucesso!")
-                st.rerun()
-            else:
-                st.error("Papel inválido ou não encontrado na API.")
+    finally:
+        conn.close()
 
-    # Seção para remover ação
-    with st.expander("🗑️ Remover Ação"):
-        papel_excluir = st.text_input("Digite o código do papel para remover").upper()
-        if st.button("Excluir"):
-            delete_stock(papel_excluir)
-            st.warning(f"Ação {papel_excluir} removida!")
-            st.rerun()
+    return msg
+
+def get_stocks():
+    """Retorna todas as ações cadastradas."""
+    conn = sqlite3.connect("stocks.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM stocks")
+    stocks = cursor.fetchall()
+    conn.close()
+    return stocks
+
+def delete_stock(papel):
+    """Remove uma ação do banco de dados pelo código do papel, se existir."""
+    conn = sqlite3.connect("stocks.db")
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("SELECT * FROM stocks WHERE papel = ?", (papel,))
+        stock = cursor.fetchone()
+
+        if stock:
+            cursor.execute("DELETE FROM stocks WHERE papel = ?", (papel,))
+            conn.commit()
+            msg = f"Ação {papel} removida com sucesso!"
+        else:
+            msg = f"Ação {papel} não encontrada no banco de dados."
+
+    except sqlite3.Error as e:
+        msg = f"Erro ao excluir ação {papel}: {e}"
+
+    finally:
+        conn.close()
+    
+    return msg
+
+def limpar_nomes_antigos():
+    """Atualiza todas as ações cadastradas removendo os sufixos do nome."""
+    conn = sqlite3.connect("stocks.db")
+    cursor = conn.cursor()
+
+    # Buscar todas as ações
+    cursor.execute("SELECT papel, nome FROM stocks")
+    stocks = cursor.fetchall()
+
+    for papel, nome in stocks:
+        nome_formatado = format_company_name(nome)
+        cursor.execute("UPDATE stocks SET nome = ? WHERE papel = ?", (nome_formatado, papel))
+
+    conn.commit()
+    conn.close()
+    print("Nomes das ações foram corrigidos no banco de dados.")
+
+# Execute essa função **apenas uma vez** para corrigir os nomes antigos
+# limpar_nomes_antigos()
