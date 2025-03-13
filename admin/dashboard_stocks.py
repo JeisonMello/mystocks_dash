@@ -1,93 +1,68 @@
-import sqlite3
+import streamlit as st
+import pandas as pd
+import yfinance as yf
+from auth.database_stocks import add_stock, get_stocks, delete_stock
 
-def create_stocks_table():
-    """Cria a tabela de ações no banco de dados se não existir."""
-    conn = sqlite3.connect("stocks.db")
-    cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS stocks (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            papel TEXT UNIQUE NOT NULL,
-            nome TEXT,
-            preco REAL,
-            custava REAL,
-            yield REAL,
-            preco_teto REAL,
-            setor TEXT,
-            estrategia TEXT,
-            obs TEXT
-        )
-    ''')
-    conn.commit()
-    conn.close()
-
-# Criar a tabela ao importar o módulo
-create_stocks_table()
-
-def add_stock(papel, nome, preco, custava, yield_val, preco_teto, setor, estrategia, obs):
-    """Adiciona uma nova ação ou atualiza uma já existente no banco de dados."""
-    conn = sqlite3.connect("stocks.db")
-    cursor = conn.cursor()
-
+def get_stock_data(papel):
+    """Busca os dados da ação na API do Yahoo Finance."""
     try:
-        # Verifica se a ação já existe no banco de dados
-        cursor.execute("SELECT * FROM stocks WHERE papel = ?", (papel,))
-        existing_stock = cursor.fetchone()
+        papel_formatado = papel + ".SA"  # Yahoo Finance usa ".SA" para ações brasileiras
+        stock = yf.Ticker(papel_formatado)
+        info = stock.info
 
-        if existing_stock:
-            # Atualiza os dados caso a ação já exista
-            cursor.execute('''
-                UPDATE stocks 
-                SET nome = ?, preco = ?, custava = ?, yield = ?, preco_teto = ?, setor = ?, estrategia = ?, obs = ?
-                WHERE papel = ?
-            ''', (nome, preco, custava, yield_val, preco_teto, setor, estrategia, obs, papel))
-            msg = f"Ação {papel} já existia e foi atualizada com sucesso!"
+        return {
+            "nome": info.get("shortName", "Nome Desconhecido"),
+            "preco": info.get("regularMarketPrice", 0.0),
+            "yield": info.get("trailingAnnualDividendYield", 0.0) * 100 if info.get("trailingAnnualDividendYield") else 0.0,
+            "setor": info.get("sector", "Setor Desconhecido")
+        }
+    except Exception as e:
+        print(f"Erro ao buscar dados para {papel}: {e}")
+        return {"nome": "", "preco": 0.0, "yield": 0.0, "setor": ""}
+
+def dashboard_stocks():
+    st.title("📊 Dashboard - Ações Monitoradas")
+
+    # Exibir tabela de ações cadastradas de forma visualmente agradável
+    stocks = get_stocks()
+    if stocks:
+        df = pd.DataFrame(stocks, columns=["ID", "Papel", "Nome", "Preço", "Custava", "Yield", "Preço Teto", "Setor", "Estratégia", "Observação"])
+        df = df.drop(columns=["ID"])  # Oculta a coluna ID da tabela
+        st.dataframe(df.style.set_properties(**{'text-align': 'center'}))  # Formatação elegante
+    else:
+        st.warning("Nenhuma ação cadastrada ainda.")
+
+    # Botão para exibir o formulário de adição
+    with st.expander("➕ Adicionar Nova Ação"):
+        st.subheader("Adicionar Nova Ação")
+        papel = st.text_input("Papel (ex: CSMG3)").upper()
+
+        if papel:
+            stock_info = get_stock_data(papel)
+            nome = stock_info["nome"]
+            preco = stock_info["preco"]
+            yield_val = stock_info["yield"]
+            setor = stock_info["setor"]
         else:
-            # Insere nova ação caso ainda não exista
-            cursor.execute('''
-                INSERT INTO stocks (papel, nome, preco, custava, yield, preco_teto, setor, estrategia, obs)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (papel, nome, preco, custava, yield_val, preco_teto, setor, estrategia, obs))
-            msg = f"Ação {papel} adicionada com sucesso!"
+            nome, preco, yield_val, setor = "", 0.0, 0.0, ""
 
-        conn.commit()
-    except sqlite3.Error as e:
-        msg = f"Erro ao adicionar ou atualizar ação {papel}: {e}"
-    finally:
-        conn.close()
-    
-    return msg  # Retorna uma mensagem indicando se foi adicionado ou atualizado
+        custava = st.number_input("Custava", min_value=0.0, format="%.2f")
+        preco_teto = st.number_input("Preço Teto", min_value=0.0, format="%.2f")
+        estrategia = st.selectbox("Estratégia", ["Dividends", "Value Invest"])
+        obs = st.text_input("Observação")
 
-def get_stocks():
-    """Retorna todas as ações cadastradas."""
-    conn = sqlite3.connect("stocks.db")
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM stocks")
-    stocks = cursor.fetchall()
-    conn.close()
-    return stocks
+        if st.button("Adicionar Ação"):
+            if papel and nome and preco > 0:
+                resultado = add_stock(papel, nome, preco, custava, yield_val, preco_teto, setor, estrategia, obs)
+                st.success(resultado)  # Mensagem de adicionado ou atualizado
+                st.rerun()
+            else:
+                st.error("Papel inválido ou não encontrado na API.")
 
-def delete_stock(papel):
-    """Remove uma ação do banco de dados pelo código do papel, se existir."""
-    conn = sqlite3.connect("stocks.db")
-    cursor = conn.cursor()
-
-    try:
-        # Verifica se a ação existe antes de remover
-        cursor.execute("SELECT * FROM stocks WHERE papel = ?", (papel,))
-        stock = cursor.fetchone()
-
-        if stock:
-            cursor.execute("DELETE FROM stocks WHERE papel = ?", (papel,))
-            conn.commit()
-            msg = f"Ação {papel} removida com sucesso!"
-        else:
-            msg = f"Ação {papel} não encontrada no banco de dados."
-
-    except sqlite3.Error as e:
-        msg = f"Erro ao excluir ação {papel}: {e}"
-
-    finally:
-        conn.close()
-    
-    return msg
+    # Seção de remoção de ações
+    with st.expander("🗑️ Remover Ação"):
+        papel_excluir = st.text_input("Digite o código do papel para remover").upper()
+        if st.button("Excluir"):
+            delete_stock(papel_excluir)
+            st.warning(f"Ação {papel_excluir} removida!")
+            st.rerun()
