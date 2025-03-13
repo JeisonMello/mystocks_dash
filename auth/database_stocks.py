@@ -49,7 +49,6 @@ def update_stock(papel, nome, preco, custava, yield_val, preco_teto, setor, estr
     cursor = conn.cursor()
 
     try:
-        # Verifica se a ação existe antes de atualizar
         cursor.execute("SELECT * FROM stocks WHERE papel = ?", (papel,))
         existing_stock = cursor.fetchone()
 
