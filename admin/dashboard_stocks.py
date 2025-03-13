@@ -29,7 +29,6 @@ def dashboard_stocks():
         df = pd.DataFrame(stocks, columns=["ID", "Papel", "Nome", "Preço", "Custava", "Yield", "Preço Teto", "Setor", "Estratégia", "Observação"])
         df = df.drop(columns=["ID"])  # Oculta a coluna ID da tabela
         st.dataframe(df.style.set_properties(**{'text-align': 'center'}))  # Formatação elegante
-
     else:
         st.warning("Nenhuma ação cadastrada ainda.")
 
@@ -54,8 +53,8 @@ def dashboard_stocks():
 
         if st.button("Adicionar Ação"):
             if papel and nome and preco > 0:
-                add_stock(papel, nome, preco, custava, yield_val, preco_teto, setor, estrategia, obs)
-                st.success(f"Ação {papel} adicionada com sucesso!")
+                resultado = add_stock(papel, nome, preco, custava, yield_val, preco_teto, setor, estrategia, obs)
+                st.success(resultado)  # Mensagem de adicionado ou atualizado
                 st.rerun()
             else:
                 st.error("Papel inválido ou não encontrado na API.")
