@@ -10,11 +10,11 @@ def get_stock_data(papel):
         stock = yf.Ticker(papel_formatado)
         info = stock.info
 
-        # O maior valor de dividend yield entre as opções disponíveis
-        trailing_yield = info.get("trailingAnnualDividendYield", 0)  # Pode estar zerado
-        forward_yield = info.get("dividendYield", 0)  # Valor futuro
+        # Pega o maior valor entre os yields disponíveis e multiplica por 100 para percentual
+        trailing_yield = info.get("trailingAnnualDividendYield", 0) or 0
+        forward_yield = info.get("dividendYield", 0) or 0
 
-        best_yield = max(trailing_yield, forward_yield) * 100  # Pega o maior e converte para %
+        best_yield = round(max(trailing_yield, forward_yield) * 100, 2)  # Ajuste correto
 
         # Formata o nome para exibir apenas o nome limpo (removendo ON, PN, etc.)
         nome_limpo = " ".join(info.get("shortName", "Nome Desconhecido").split()[:2])
@@ -22,7 +22,7 @@ def get_stock_data(papel):
         return {
             "nome": nome_limpo,
             "preco": round(info.get("regularMarketPrice", 0.0), 2),
-            "yield": round(best_yield, 2),
+            "yield": best_yield,  # Agora está correto
             "setor": info.get("sector", "Setor Desconhecido")
         }
     except Exception as e:
@@ -42,7 +42,7 @@ def dashboard_stocks():
         df["Preço"] = df["Preço"].apply(lambda x: f"R$ {x:.2f}")
         df["Custava"] = df["Custava"].apply(lambda x: f"R$ {x:.2f}")
         df["Teto"] = df["Teto"].apply(lambda x: f"R$ {x:.2f}")
-        df["Yield"] = df["Yield"].apply(lambda x: f"{x:.2f}%")
+        df["Yield"] = df["Yield"].apply(lambda x: f"{x:.2f}%")  # Agora correto
 
         # Exibir com estilo zebrado
         st.write(df.style.set_properties(**{'text-align': 'center'}).set_table_styles(
