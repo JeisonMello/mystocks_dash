@@ -75,7 +75,10 @@ def dashboard_stocks():
 
         custava = st.number_input("Custava", min_value=0.0, format="%.2f")
         preco_teto = st.number_input("Preço Teto", min_value=0.0, format="%.2f")
-        estrategia = st.selectbox("Estratégia", ["Dividends", "Value Invest"])
+        
+        # **Adicionando "FII" no campo de Estratégia**
+        estrategia = st.selectbox("Estratégia", ["Dividends", "Value Invest", "FII"])  
+        
         obs = st.text_input("Observação")
 
         if st.button("Adicionar Ação"):
