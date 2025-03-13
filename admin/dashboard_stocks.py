@@ -1,6 +1,14 @@
 import streamlit as st
 import pandas as pd
 import yfinance as yf
+def debug_stock_data(papel):
+    """Depuração: Exibir todas as informações retornadas pela API do Yahoo Finance"""
+    papel_formatado = papel + ".SA"  # Formato correto para ações brasileiras
+    stock = yf.Ticker(papel_formatado)
+    info = stock.info  # Obtém todos os dados disponíveis
+
+    st.subheader("🔍 Debug: Dados da API Yahoo Finance")
+    st.json(info)  # Mostra todas as informações em formato JSON
 from auth.database_stocks import add_stock, get_stocks, delete_stock, update_stock
 
 def get_stock_data(papel):
