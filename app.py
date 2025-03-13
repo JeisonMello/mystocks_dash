@@ -4,14 +4,12 @@ from admin.dashboard import admin_dashboard
 
 if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
+    st.session_state['user_email'] = ""  # Guarda o e-mail do usuário logado
 
 if not st.session_state['logged_in']:
     login()
 else:
-    st.sidebar.title("Navegação")
-    pagina = st.sidebar.selectbox("Escolha uma página", ["Dashboard", "Admin"])
-
-    if pagina == "Dashboard":
-        st.write("📊 Bem-vindo ao painel do usuário!")
-    elif pagina == "Admin":
-        admin_dashboard()
+    if st.session_state['user_email'] == "jeisonmello@icloud.com":
+        admin_dashboard()  # Apenas você acessa o painel administrativo
+    else:
+        st.write(f"📊 Bem-vindo, {st.session_state['user_email']}! Área do usuário em construção...")
