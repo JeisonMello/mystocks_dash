@@ -4,18 +4,19 @@ import yfinance as yf
 from auth.database_stocks import add_stock, get_stocks, delete_stock, update_stock
 
 def get_stock_data(papel):
-    """Busca os dados da ação na API do Yahoo Finance."""
+    """Busca os dados da ação na API do Yahoo Finance e formata os dados corretamente."""
     try:
         papel_formatado = papel + ".SA"  # Yahoo Finance usa ".SA" para ações brasileiras
         stock = yf.Ticker(papel_formatado)
         info = stock.info
 
-        # Pega o maior yield disponível (trailing = passado, forward = futuro)
-        trailing_yield = info.get("trailingAnnualDividendYield", None)
-        forward_yield = info.get("forwardDividendYield", None)
-        best_yield = max(trailing_yield or 0, forward_yield or 0) * 100  # Converte para %
+        # O maior valor de dividend yield entre as opções disponíveis
+        trailing_yield = info.get("trailingAnnualDividendYield", 0)  # Pode estar zerado
+        forward_yield = info.get("dividendYield", 0)  # Valor futuro
 
-        # Formata o nome para não exibir ON, PN, etc.
+        best_yield = max(trailing_yield, forward_yield) * 100  # Pega o maior e converte para %
+
+        # Formata o nome para exibir apenas o nome limpo (removendo ON, PN, etc.)
         nome_limpo = " ".join(info.get("shortName", "Nome Desconhecido").split()[:2])
 
         return {
@@ -28,26 +29,26 @@ def get_stock_data(papel):
         print(f"Erro ao buscar dados para {papel}: {e}")
         return {"nome": "", "preco": 0.0, "yield": 0.0, "setor": ""}
 
-def debug_stock_data(papel):
-    """Depuração: Exibe todos os dados da API para verificar retorno do Yahoo Finance."""
-    papel_formatado = papel + ".SA"
-    stock = yf.Ticker(papel_formatado)
-    info = stock.info
-    st.subheader("🔍 Debug: Dados da API Yahoo Finance")
-    st.json(info)  # Mostra todas as informações da API
-
 def dashboard_stocks():
     st.title("📊 Dashboard - Ações Monitoradas")
 
-    # Exibir tabela de ações cadastradas
+    # Exibir tabela de ações cadastradas de forma visualmente agradável
     stocks = get_stocks()
     if stocks:
-        df = pd.DataFrame(stocks, columns=["ID", "Papel", "Empresa", "Preço", "Custava", "Yield", "Teto", "Setor", "Estratégia", "Obs"])
-        df = df.drop(columns=["ID"])  # Oculta a coluna ID para melhor visualização
+        df = pd.DataFrame(stocks, columns=["ID", "Papel", "Nome", "Preço", "Custava", "Yield", "Teto", "Setor", "Estratégia", "Obs"])
+        df = df.drop(columns=["ID"])  # Oculta a coluna ID
 
-        # Aplicar estilo alternando cores de linha
-        st.dataframe(df.style.set_properties(**{'text-align': 'center'}).apply(lambda x: ['background-color: #2E2E2E' if i % 2 == 0 else 'background-color: #1C1C1C' for i in range(len(x))]))
+        # Aplicando formatação para melhor visualização
+        df["Preço"] = df["Preço"].apply(lambda x: f"R$ {x:.2f}")
+        df["Custava"] = df["Custava"].apply(lambda x: f"R$ {x:.2f}")
+        df["Teto"] = df["Teto"].apply(lambda x: f"R$ {x:.2f}")
+        df["Yield"] = df["Yield"].apply(lambda x: f"{x:.2f}%")
 
+        # Exibir com estilo zebrado
+        st.write(df.style.set_properties(**{'text-align': 'center'}).set_table_styles(
+            [{'selector': 'thead th', 'props': [('background-color', '#333'), ('color', 'white'), ('font-weight', 'bold')]},
+             {'selector': 'tbody tr:nth-child(even)', 'props': [('background-color', '#222')]}]
+        ))
     else:
         st.warning("Nenhuma ação cadastrada ainda.")
 
@@ -57,7 +58,6 @@ def dashboard_stocks():
         papel = st.text_input("Papel (ex: CSMG3)").upper()
 
         if papel:
-            debug_stock_data(papel)  # Exibir dados para depuração
             stock_info = get_stock_data(papel)
             nome = stock_info["nome"]
             preco = stock_info["preco"]
