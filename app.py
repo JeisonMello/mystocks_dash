@@ -1,6 +1,7 @@
 import streamlit as st
 from auth.login import login
-from admin.dashboard import admin_dashboard  # Importando painel admin corretamente
+from admin.dashboard import admin_dashboard
+from admin.dashboard_stocks import dashboard_stocks  # Agora temos os dois painéis
 
 if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
@@ -12,8 +13,8 @@ else:
     pagina = st.sidebar.selectbox("Escolha uma página", ["Dashboard", "Histórico", "Admin"])
 
     if pagina == "Dashboard":
-        st.write("Aqui vai o código do Dashboard")
+        dashboard_stocks()  # Agora chama o Dashboard correto para ações
     elif pagina == "Histórico":
         st.write("Aqui vai o código do Histórico")
     elif pagina == "Admin":
-        admin_dashboard()  # Agora a página Admin está separada e funcionando!
+        admin_dashboard()
