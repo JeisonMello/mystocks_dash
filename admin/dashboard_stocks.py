@@ -24,24 +24,16 @@ def create_stocks_table():
 # Criar a tabela ao importar o módulo
 create_stocks_table()
 
-def format_company_name(name):
-    """Remove sufixos como ON, PN, NM, etc., do nome da empresa."""
-    palavras_excluir = ["ON", "PN", "NM", "EDJ", "N1", "N2", "UNT", "CI", "EJ"]
-    return " ".join([word for word in name.split() if word not in palavras_excluir])
-
 def add_stock(papel, nome, preco, custava, yield_val, preco_teto, setor, estrategia, obs):
     """Adiciona uma nova ação ao banco de dados."""
     conn = sqlite3.connect("stocks.db")
     cursor = conn.cursor()
 
-    # Formatar o nome da empresa antes de salvar
-    nome_formatado = format_company_name(nome)
-
     try:
         cursor.execute('''
             INSERT INTO stocks (papel, nome, preco, custava, yield, preco_teto, setor, estrategia, obs)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (papel, nome_formatado, preco, custava, yield_val, preco_teto, setor, estrategia, obs))
+        ''', (papel, nome, preco, custava, yield_val, preco_teto, setor, estrategia, obs))
         conn.commit()
         msg = f"Ação {papel} adicionada com sucesso!"
     except sqlite3.IntegrityError:
@@ -62,12 +54,11 @@ def update_stock(papel, nome, preco, custava, yield_val, preco_teto, setor, estr
         existing_stock = cursor.fetchone()
 
         if existing_stock:
-            nome_formatado = format_company_name(nome)
             cursor.execute('''
                 UPDATE stocks 
                 SET nome = ?, preco = ?, custava = ?, yield = ?, preco_teto = ?, setor = ?, estrategia = ?, obs = ?
                 WHERE papel = ?
-            ''', (nome_formatado, preco, custava, yield_val, preco_teto, setor, estrategia, obs, papel))
+            ''', (nome, preco, custava, yield_val, preco_teto, setor, estrategia, obs, papel))
             conn.commit()
             msg = f"Ação {papel} foi atualizada com sucesso!"
         else:
@@ -113,23 +104,3 @@ def delete_stock(papel):
         conn.close()
     
     return msg
-
-def limpar_nomes_antigos():
-    """Atualiza todas as ações cadastradas removendo os sufixos do nome."""
-    conn = sqlite3.connect("stocks.db")
-    cursor = conn.cursor()
-
-    # Buscar todas as ações
-    cursor.execute("SELECT papel, nome FROM stocks")
-    stocks = cursor.fetchall()
-
-    for papel, nome in stocks:
-        nome_formatado = format_company_name(nome)
-        cursor.execute("UPDATE stocks SET nome = ? WHERE papel = ?", (nome_formatado, papel))
-
-    conn.commit()
-    conn.close()
-    print("Nomes das ações foram corrigidos no banco de dados.")
-
-# Execute essa função **apenas uma vez** para corrigir os nomes antigos
-# limpar_nomes_antigos()
