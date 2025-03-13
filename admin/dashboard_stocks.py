@@ -1,16 +1,24 @@
 import streamlit as st
 import pandas as pd
+import yfinance as yf
 from auth.database_stocks import add_stock, get_stocks, delete_stock
 
-# Simulação de API para buscar dados
 def get_stock_data(papel):
-    """Simula uma API retornando dados do papel."""
-    stock_data = {
-        "CSMG3": {"nome": "Copasa", "preco": 22.83, "yield": 16.30, "setor": "Energia"},
-        "PETR4": {"nome": "Petrobras", "preco": 30.45, "yield": 12.80, "setor": "Petróleo"},
-        "VALE3": {"nome": "Vale", "preco": 68.50, "yield": 8.75, "setor": "Mineração"},
-    }
-    return stock_data.get(papel, {"nome": "", "preco": 0.0, "yield": 0.0, "setor": ""})
+    """Busca os dados da ação na API do Yahoo Finance."""
+    try:
+        papel_formatado = papel + ".SA"  # Yahoo Finance usa ".SA" para ações brasileiras
+        stock = yf.Ticker(papel_formatado)
+        info = stock.info
+
+        return {
+            "nome": info.get("shortName", "Nome Desconhecido"),
+            "preco": info.get("regularMarketPrice", 0.0),
+            "yield": info.get("trailingAnnualDividendYield", 0.0) * 100 if info.get("trailingAnnualDividendYield") else 0.0,
+            "setor": info.get("sector", "Setor Desconhecido")
+        }
+    except Exception as e:
+        print(f"Erro ao buscar dados para {papel}: {e}")
+        return {"nome": "", "preco": 0.0, "yield": 0.0, "setor": ""}
 
 def dashboard_stocks():
     st.title("📊 Dashboard - Ações Monitoradas")
@@ -45,7 +53,7 @@ def dashboard_stocks():
         obs = st.text_input("Observação")
 
         if st.button("Adicionar Ação"):
-            if papel and nome:
+            if papel and nome and preco > 0:
                 add_stock(papel, nome, preco, custava, yield_val, preco_teto, setor, estrategia, obs)
                 st.success(f"Ação {papel} adicionada com sucesso!")
                 st.rerun()
