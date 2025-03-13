@@ -1,15 +1,35 @@
 import streamlit as st
-from auth.login import login
-from admin.dashboard import admin_dashboard
+from auth.database import add_user, check_email_exists
 
-if 'logged_in' not in st.session_state:
-    st.session_state['logged_in'] = False
-    st.session_state['user_email'] = ""  # Guarda o e-mail do usuário logado
+def login():
+    """Tela de login do sistema."""
+    st.title("🔐 Login")
 
-if not st.session_state['logged_in']:
-    login()
-else:
-    if st.session_state['user_email'] == "jeisonmello@icloud.com":
-        admin_dashboard()  # Apenas você acessa o painel administrativo
-    else:
-        st.write(f"📊 Bem-vindo, {st.session_state['user_email']}! Área do usuário em construção...")
+    menu = ["Entrar", "Criar Conta"]
+    escolha = st.selectbox("Escolha uma opção", menu)
+
+    if escolha == "Entrar":
+        email = st.text_input("E-mail")
+        password = st.text_input("Senha", type="password")
+
+        if st.button("Entrar"):
+            st.session_state['logged_in'] = True  # Define que o usuário está logado
+            st.session_state['user_email'] = email  # Guarda o e-mail na sessão
+            st.success(f"Bem-vindo, {email}!")
+            st.rerun()  # Atualiza a página automaticamente
+
+    elif escolha == "Criar Conta":
+        new_email = st.text_input("E-mail")
+        new_password = st.text_input("Escolha uma senha", type="password")
+        confirm_password = st.text_input("Confirme sua senha", type="password")
+
+        if st.button("Registrar"):
+            if new_password != confirm_password:
+                st.error("As senhas não coincidem!")
+            else:
+                resultado = add_user(new_email, new_password)
+                if resultado == "success":
+                    st.success("Conta criada com sucesso! Redirecionando para o login...")
+                    st.rerun()
+                else:
+                    st.error("Erro ao criar conta. Esse e-mail já está cadastrado.")
