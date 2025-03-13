@@ -1,12 +1,7 @@
 import streamlit as st
 import pandas as pd
 import yfinance as yf
-from auth.database_stocks import add_stock, get_stocks, delete_stock
-
-def format_company_name(name):
-    """Remove sufixos como ON, PN, NM do nome da empresa para manter apenas o nome limpo."""
-    palavras_excluir = ["ON", "PN", "NM", "EDJ", "N1", "N2", "UNT", "CI"]
-    return " ".join([word for word in name.split() if word not in palavras_excluir])
+from auth.database_stocks import add_stock, get_stocks, delete_stock, update_stock
 
 def get_stock_data(papel):
     """Busca os dados da ação na API do Yahoo Finance."""
@@ -15,10 +10,15 @@ def get_stock_data(papel):
         stock = yf.Ticker(papel_formatado)
         info = stock.info
 
+        # Captura o melhor valor disponível para yield de dividendos
+        dividend_yield = info.get("trailingAnnualDividendYield", None)
+        if dividend_yield is None:  # Se não existir, tenta o forwardDividendYield
+            dividend_yield = info.get("forwardDividendYield", 0.0)
+
         return {
-            "nome": format_company_name(info.get("shortName", "Nome Desconhecido")),
+            "nome": " ".join(info.get("shortName", "Nome Desconhecido").split()[:2]),  # Mantém só os dois primeiros nomes
             "preco": round(info.get("regularMarketPrice", 0.0), 2),
-            "yield": round(info.get("trailingAnnualDividendYield", 0.0) * 100, 2) if info.get("trailingAnnualDividendYield") else 0.0,
+            "yield": round(dividend_yield * 100, 2) if dividend_yield else 0.0,
             "setor": info.get("sector", "Setor Desconhecido")
         }
     except Exception as e:
@@ -28,29 +28,28 @@ def get_stock_data(papel):
 def dashboard_stocks():
     st.title("📊 Dashboard - Ações Monitoradas")
 
-    # Buscar ações cadastradas
+    # Exibir tabela de ações cadastradas
     stocks = get_stocks()
-    
     if stocks:
-        df = pd.DataFrame(stocks, columns=["ID", "Papel", "Empresa", "Preço", "Custava", "Yield", "Teto", "Setor", "Estratégia", "Obs"])
-        df = df.drop(columns=["ID"])  # Remover a coluna ID para exibição
-        
-        # Formatando os valores
+        df = pd.DataFrame(stocks, columns=["ID", "Papel", "Empresa", "Preço", "Custava", "Yield", "Teto", "Setor", "Estratégia", "Obs."])
+        df = df.drop(columns=["ID"])  # Oculta a coluna ID para melhor visualização
+
+        # Formatar valores
         df["Preço"] = df["Preço"].apply(lambda x: f"R$ {x:.2f}")
         df["Custava"] = df["Custava"].apply(lambda x: f"R$ {x:.2f}")
-        df["Yield"] = df["Yield"].apply(lambda x: f"{x:.2f}%")
         df["Teto"] = df["Teto"].apply(lambda x: f"R$ {x:.2f}")
+        df["Yield"] = df["Yield"].apply(lambda x: f"{x:.2f}%")
 
-        # Aplicar estilo para alternância de cores
-        def highlight_rows(row):
-            return ["background-color: #333333; color: white" if row.name % 2 == 0 else "" for _ in row]
+        # Aplicar cores alternadas
+        styled_df = df.style.set_properties(**{'text-align': 'center'})\
+            .set_table_styles([{'selector': 'th', 'props': [('font-size', '16px'), ('text-align', 'center')]}])\
+            .apply(lambda x: ['background-color: #333' if i % 2 == 0 else 'background-color: #222' for i in range(len(x))], axis=0)
 
-        st.dataframe(df.style.apply(highlight_rows, axis=1))
-    
+        st.table(styled_df)
     else:
         st.warning("Nenhuma ação cadastrada ainda.")
 
-    # Expansível para adicionar nova ação
+    # Botão para exibir o formulário de adição
     with st.expander("➕ Adicionar Nova Ação"):
         st.subheader("Adicionar Nova Ação")
         papel = st.text_input("Papel (ex: CSMG3)").upper()
@@ -70,14 +69,14 @@ def dashboard_stocks():
         obs = st.text_input("Observação")
 
         if st.button("Adicionar Ação"):
-            if papel and nome and preco > 0:
+            if papel and nome:
                 add_stock(papel, nome, preco, custava, yield_val, preco_teto, setor, estrategia, obs)
                 st.success(f"Ação {papel} adicionada com sucesso!")
                 st.rerun()
             else:
                 st.error("Papel inválido ou não encontrado na API.")
 
-    # Seção para remover ação
+    # Seção de remoção de ações
     with st.expander("🗑️ Remover Ação"):
         papel_excluir = st.text_input("Digite o código do papel para remover").upper()
         if st.button("Excluir"):
