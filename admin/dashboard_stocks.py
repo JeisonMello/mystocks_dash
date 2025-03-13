@@ -1,82 +1,93 @@
-import streamlit as st
-import pandas as pd
-import yfinance as yf
-from auth.database_stocks import add_stock, get_stocks, delete_stock, update_stock
+import sqlite3
 
-def get_stock_data(papel):
-    """Busca os dados da ação na API do Yahoo Finance."""
+def create_stocks_table():
+    """Cria a tabela de ações no banco de dados se não existir."""
+    conn = sqlite3.connect("stocks.db")
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS stocks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            papel TEXT UNIQUE NOT NULL,
+            nome TEXT,
+            preco REAL,
+            custava REAL,
+            yield REAL,
+            preco_teto REAL,
+            setor TEXT,
+            estrategia TEXT,
+            obs TEXT
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+# Criar a tabela ao importar o módulo
+create_stocks_table()
+
+def add_stock(papel, nome, preco, custava, yield_val, preco_teto, setor, estrategia, obs):
+    """Adiciona uma nova ação ou atualiza uma já existente no banco de dados."""
+    conn = sqlite3.connect("stocks.db")
+    cursor = conn.cursor()
+
     try:
-        papel_formatado = papel + ".SA"  # Yahoo Finance usa ".SA" para ações brasileiras
-        stock = yf.Ticker(papel_formatado)
-        info = stock.info
+        # Verifica se a ação já existe no banco de dados
+        cursor.execute("SELECT * FROM stocks WHERE papel = ?", (papel,))
+        existing_stock = cursor.fetchone()
 
-        return {
-            "nome": info.get("shortName", "Nome Desconhecido"),
-            "preco": info.get("regularMarketPrice", 0.0),
-            "yield": info.get("trailingAnnualDividendYield", 0.0) * 100 if info.get("trailingAnnualDividendYield") else 0.0,
-            "setor": info.get("sector", "Setor Desconhecido")
-        }
-    except Exception as e:
-        print(f"Erro ao buscar dados para {papel}: {e}")
-        return {"nome": "", "preco": 0.0, "yield": 0.0, "setor": ""}
+        if existing_stock:
+            # Atualiza os dados caso a ação já exista
+            cursor.execute('''
+                UPDATE stocks 
+                SET nome = ?, preco = ?, custava = ?, yield = ?, preco_teto = ?, setor = ?, estrategia = ?, obs = ?
+                WHERE papel = ?
+            ''', (nome, preco, custava, yield_val, preco_teto, setor, estrategia, obs, papel))
+            msg = f"Ação {papel} já existia e foi atualizada com sucesso!"
+        else:
+            # Insere nova ação caso ainda não exista
+            cursor.execute('''
+                INSERT INTO stocks (papel, nome, preco, custava, yield, preco_teto, setor, estrategia, obs)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (papel, nome, preco, custava, yield_val, preco_teto, setor, estrategia, obs))
+            msg = f"Ação {papel} adicionada com sucesso!"
 
-def dashboard_stocks():
-    st.title("📊 Dashboard - Ações Monitoradas")
+        conn.commit()
+    except sqlite3.Error as e:
+        msg = f"Erro ao adicionar ou atualizar ação {papel}: {e}"
+    finally:
+        conn.close()
+    
+    return msg  # Retorna uma mensagem indicando se foi adicionado ou atualizado
 
-    # Exibir tabela de ações cadastradas
-    stocks = get_stocks()
-    if stocks:
-        df = pd.DataFrame(stocks, columns=["ID", "Papel", "Nome", "Preço", "Custava", "Yield", "Preço Teto", "Setor", "Estratégia", "Observação"])
-        df = df.drop(columns=["ID"])  # Oculta a coluna ID
-        for i, row in df.iterrows():
-            with st.expander(f"📌 {row['Papel']} - {row['Nome']}"):
-                st.write(f"**Preço Atual:** R$ {row['Preço']:.2f}")
-                st.write(f"**Yield:** {row['Yield']:.2f}%")
-                st.write(f"**Setor:** {row['Setor']}")
-                st.write(f"**Estratégia:** {row['Estratégia']}")
-                st.write(f"**Observação:** {row['Observação']}")
+def get_stocks():
+    """Retorna todas as ações cadastradas."""
+    conn = sqlite3.connect("stocks.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM stocks")
+    stocks = cursor.fetchall()
+    conn.close()
+    return stocks
 
-                # Botão para ativar edição
-                if st.button(f"✏️ Editar {row['Papel']}", key=f"edit_{row['Papel']}"):
-                    st.session_state["edit_papel"] = row['Papel']
-                    st.rerun()
+def delete_stock(papel):
+    """Remove uma ação do banco de dados pelo código do papel, se existir."""
+    conn = sqlite3.connect("stocks.db")
+    cursor = conn.cursor()
 
-    else:
-        st.warning("Nenhuma ação cadastrada ainda.")
+    try:
+        # Verifica se a ação existe antes de remover
+        cursor.execute("SELECT * FROM stocks WHERE papel = ?", (papel,))
+        stock = cursor.fetchone()
 
-    # Seção de Edição
-    if "edit_papel" in st.session_state:
-        papel_editar = st.session_state["edit_papel"]
-        st.subheader(f"✏️ Editando Ação: {papel_editar}")
+        if stock:
+            cursor.execute("DELETE FROM stocks WHERE papel = ?", (papel,))
+            conn.commit()
+            msg = f"Ação {papel} removida com sucesso!"
+        else:
+            msg = f"Ação {papel} não encontrada no banco de dados."
 
-        # Buscar os dados atuais para edição
-        stock_atual = next((s for s in stocks if s[1] == papel_editar), None)
-        if stock_atual:
-            _, papel, nome, preco, custava, yield_val, preco_teto, setor, estrategia, obs = stock_atual
+    except sqlite3.Error as e:
+        msg = f"Erro ao excluir ação {papel}: {e}"
 
-            novo_nome = st.text_input("Nome", nome)
-            novo_preco = st.number_input("Preço Atual", value=preco, format="%.2f")
-            novo_custava = st.number_input("Custava", value=custava, format="%.2f")
-            novo_yield = st.number_input("Yield", value=yield_val, format="%.2f")
-            novo_preco_teto = st.number_input("Preço Teto", value=preco_teto, format="%.2f")
-            novo_setor = st.text_input("Setor", setor)
-            nova_estrategia = st.selectbox("Estratégia", ["Dividends", "Value Invest"], index=["Dividends", "Value Invest"].index(estrategia))
-            nova_obs = st.text_area("Observação", obs)
-
-            if st.button("💾 Salvar Alterações"):
-                resultado = update_stock(papel, novo_nome, novo_preco, novo_custava, novo_yield, novo_preco_teto, novo_setor, nova_estrategia, nova_obs)
-                st.success(resultado)
-                del st.session_state["edit_papel"]  # Remove o estado de edição
-                st.rerun()
-
-            if st.button("❌ Cancelar"):
-                del st.session_state["edit_papel"]
-                st.rerun()
-
-    # Seção de remoção de ações
-    with st.expander("🗑️ Remover Ação"):
-        papel_excluir = st.text_input("Digite o código do papel para remover").upper()
-        if st.button("Excluir"):
-            delete_stock(papel_excluir)
-            st.warning(f"Ação {papel_excluir} removida!")
-            st.rerun()
+    finally:
+        conn.close()
+    
+    return msg
