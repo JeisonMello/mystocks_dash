@@ -21,66 +21,38 @@ def create_stocks_table():
     conn.commit()
     conn.close()
 
-# Cria a tabela ao importar o módulo
+# Criar a tabela ao importar o módulo
 create_stocks_table()
 
 def add_stock(papel, nome, preco, custava, yield_val, preco_teto, setor, estrategia, obs):
-    """Adiciona uma nova ação ao banco de dados ou atualiza se já existir."""
+    """Adiciona uma nova ação ou atualiza uma já existente no banco de dados."""
     conn = sqlite3.connect("stocks.db")
     cursor = conn.cursor()
 
-    try:
-        cursor.execute("SELECT * FROM stocks WHERE papel = ?", (papel,))
-        existing_stock = cursor.fetchone()
+    # Verifica se a ação já existe no banco de dados
+    cursor.execute("SELECT * FROM stocks WHERE papel = ?", (papel,))
+    existing_stock = cursor.fetchone()
 
-        if existing_stock:
-            # Atualiza os dados caso a ação já exista
-            cursor.execute('''
-                UPDATE stocks 
-                SET nome = ?, preco = ?, custava = ?, yield = ?, preco_teto = ?, setor = ?, estrategia = ?, obs = ?
-                WHERE papel = ?
-            ''', (nome, preco, custava, yield_val, preco_teto, setor, estrategia, obs, papel))
-            msg = f"Ação {papel} já existia e foi atualizada com sucesso!"
-        else:
-            cursor.execute('''
-                INSERT INTO stocks (papel, nome, preco, custava, yield, preco_teto, setor, estrategia, obs)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (papel, nome, preco, custava, yield_val, preco_teto, setor, estrategia, obs))
-            msg = f"Ação {papel} adicionada com sucesso!"
+    if existing_stock:
+        # Atualiza os dados caso a ação já exista
+        cursor.execute('''
+            UPDATE stocks 
+            SET nome = ?, preco = ?, custava = ?, yield = ?, preco_teto = ?, setor = ?, estrategia = ?, obs = ?
+            WHERE papel = ?
+        ''', (nome, preco, custava, yield_val, preco_teto, setor, estrategia, obs, papel))
+        msg = f"Ação {papel} já existia e foi atualizada com sucesso!"
+    else:
+        # Insere nova ação caso ainda não exista
+        cursor.execute('''
+            INSERT INTO stocks (papel, nome, preco, custava, yield, preco_teto, setor, estrategia, obs)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (papel, nome, preco, custava, yield_val, preco_teto, setor, estrategia, obs))
+        msg = f"Ação {papel} adicionada com sucesso!"
 
-        conn.commit()
-    except sqlite3.Error as e:
-        msg = f"Erro ao adicionar/atualizar ação {papel}: {e}"
-    finally:
-        conn.close()
-
-    return msg
-
-def update_stock(papel, nome, preco, custava, yield_val, preco_teto, setor, estrategia, obs):
-    """Atualiza os dados de uma ação existente no banco de dados."""
-    conn = sqlite3.connect("stocks.db")
-    cursor = conn.cursor()
-
-    try:
-        cursor.execute("SELECT * FROM stocks WHERE papel = ?", (papel,))
-        existing_stock = cursor.fetchone()
-
-        if existing_stock:
-            cursor.execute('''
-                UPDATE stocks 
-                SET nome = ?, preco = ?, custava = ?, yield = ?, preco_teto = ?, setor = ?, estrategia = ?, obs = ?
-                WHERE papel = ?
-            ''', (nome, preco, custava, yield_val, preco_teto, setor, estrategia, obs, papel))
-            conn.commit()
-            msg = f"Ação {papel} foi atualizada com sucesso!"
-        else:
-            msg = f"Erro: Ação {papel} não encontrada no banco de dados."
-    except sqlite3.Error as e:
-        msg = f"Erro ao atualizar ação {papel}: {e}"
-    finally:
-        conn.close()
-
-    return msg
+    conn.commit()
+    conn.close()
+    
+    return msg  # Retorna uma mensagem indicando se foi adicionado ou atualizado
 
 def get_stocks():
     """Retorna todas as ações cadastradas."""
@@ -92,23 +64,9 @@ def get_stocks():
     return stocks
 
 def delete_stock(papel):
-    """Remove uma ação do banco de dados pelo código do papel, se existir."""
+    """Remove uma ação do banco de dados pelo código do papel."""
     conn = sqlite3.connect("stocks.db")
     cursor = conn.cursor()
-
-    try:
-        cursor.execute("SELECT * FROM stocks WHERE papel = ?", (papel,))
-        stock = cursor.fetchone()
-
-        if stock:
-            cursor.execute("DELETE FROM stocks WHERE papel = ?", (papel,))
-            conn.commit()
-            msg = f"Ação {papel} removida com sucesso!"
-        else:
-            msg = f"Erro: Ação {papel} não encontrada."
-    except sqlite3.Error as e:
-        msg = f"Erro ao excluir ação {papel}: {e}"
-    finally:
-        conn.close()
-
-    return msg
+    cursor.execute("DELETE FROM stocks WHERE papel = ?", (papel,))
+    conn.commit()
+    conn.close()
