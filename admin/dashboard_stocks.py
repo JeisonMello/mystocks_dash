@@ -7,6 +7,9 @@ def debug_stock_data(papel):
     stock = yf.Ticker(papel_formatado)
     info = stock.info  # Obtém todos os dados disponíveis
 
+    if papel:
+    debug_stock_data(papel)  # Mostra os dados da API para o papel digitado
+
     st.subheader("🔍 Debug: Dados da API Yahoo Finance")
     st.json(info)  # Mostra todas as informações em formato JSON
 from auth.database_stocks import add_stock, get_stocks, delete_stock, update_stock
