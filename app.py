@@ -1,13 +1,13 @@
 import streamlit as st
 from admin.dashboard import admin_dashboard
 from admin.dashboard_stocks import dashboard_stocks
-from auth.login import login  # Importando a função login corretamente
+from auth.login import login  # Certifique-se de que login.py contém uma função chamada login()
 
 if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
 
 if not st.session_state['logged_in']:
-    login()  # Agora a função login() pode ser chamada corretamente
+    login()  # Certifique-se de que login() é uma função e não um módulo
 else:
     st.sidebar.title("Navegação")
     pagina = st.sidebar.selectbox("Escolha uma página", ["Dashboard", "Histórico", "Admin"])
