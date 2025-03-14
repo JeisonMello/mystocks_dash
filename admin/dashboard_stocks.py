@@ -1,8 +1,7 @@
 import streamlit as st
 import pandas as pd
 import yfinance as yf
-
-from auth.database_stocks import get_stocks
+from auth.database_stocks import get_stocks, add_stock, delete_stock
 
 def dashboard_stocks():
     st.title("📊 Dashboard - Ações Monitoradas")
@@ -23,7 +22,7 @@ def dashboard_stocks():
 
         # Criar links com botão interativo dentro da célula da coluna "Papel"
         df["Papel"] = df["Papel"].apply(lambda papel: f'''
-            <a href="?stock={papel}" style="text-decoration:none; color:white; font-weight:bold; display:inline-flex; align-items:center; gap:5px;">
+            <a href="?stock={papel}" style="text-decoration:none; color:white; font-weight:bold; display:inline-flex; align-items:center; gap:5px; white-space:nowrap;">
                 <span>🔍</span> <span>{papel}</span>
             </a>
         ''')
@@ -36,3 +35,28 @@ def dashboard_stocks():
 
     else:
         st.warning("Nenhuma ação cadastrada ainda.")
+
+    # **Seção para adicionar nova ação**
+    with st.expander("➕ Adicionar Nova Ação"):
+        st.subheader("Adicionar Nova Ação")
+        papel = st.text_input("Papel (ex: CSMG3)").upper()
+        empresa = st.text_input("Nome da Empresa")
+        preco = st.number_input("Preço", min_value=0.0, format="%.2f")
+        custava = st.number_input("Custava", min_value=0.0, format="%.2f")
+        teto = st.number_input("Teto", min_value=0.0, format="%.2f")
+        setor = st.text_input("Setor")
+        estrategia = st.selectbox("Estratégia", ["Dividends", "FII", "Value Invest"])
+        obs = st.text_input("Observação")
+
+        if st.button("Adicionar Ação"):
+            add_stock(papel, empresa, preco, custava, 0.0, teto, setor, estrategia, obs)
+            st.success(f"Ação {papel} adicionada com sucesso!")
+            st.rerun()
+
+    # **Seção para remover ação**
+    with st.expander("🗑️ Remover Ação"):
+        papel_excluir = st.text_input("Digite o código do papel para remover").upper()
+        if st.button("Excluir"):
+            delete_stock(papel_excluir)
+            st.warning(f"Ação {papel_excluir} removida!")
+            st.rerun()
