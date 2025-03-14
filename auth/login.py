@@ -1,9 +1,9 @@
 import streamlit as st
-from auth.database import add_user, check_email_exists
+from auth.database import check_email_exists
 
 def login():
     """Tela de login do sistema."""
-    st.title("Login")
+    st.title("🔑 Login")
 
     menu = ["Entrar", "Criar Conta"]
     escolha = st.selectbox("Escolha uma opção", menu)
@@ -13,9 +13,13 @@ def login():
         password = st.text_input("Senha", type="password")
 
         if st.button("Entrar"):
-            st.session_state['logged_in'] = True  # Define que o usuário está logado
-            st.success(f"Bem-vindo, {email}!")
-            st.rerun()  # Atualiza a página automaticamente
+            if check_email_exists(email):
+                st.session_state["logged_in"] = True
+                st.session_state["user_email"] = email  # **Salva o e-mail do usuário na sessão**
+                st.success(f"Bem-vindo, {email}!")
+                st.rerun()
+            else:
+                st.error("E-mail não cadastrado!")
 
     elif escolha == "Criar Conta":
         new_email = st.text_input("E-mail")
@@ -28,7 +32,7 @@ def login():
             else:
                 resultado = add_user(new_email, new_password)
                 if resultado == "success":
-                    st.success("Conta criada com sucesso! Redirecionando para o login...")
-                    st.rerun()  # Atualiza a página após o registro
+                    st.success("Conta criada com sucesso! Faça login.")
+                    st.rerun()
                 else:
                     st.error("Erro ao criar conta. Esse e-mail já está cadastrado.")
