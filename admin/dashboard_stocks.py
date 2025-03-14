@@ -15,10 +15,11 @@ st.markdown(
             border-collapse: collapse;
         }
         th, td {
-            padding: 12px;
+            padding: 10px;
             text-align: center;
             overflow: hidden;
             text-overflow: ellipsis;
+            white-space: nowrap;
         }
         th {
             background-color: #333333;
@@ -27,20 +28,20 @@ st.markdown(
         tr:nth-child(even) {
             background-color: #222222; /* Alternância de cor */
         }
+        tr:hover {
+            background-color: #444444; /* Destaque ao passar o mouse */
+        }
         .botao-acao {
             text-decoration: none;
             font-weight: bold;
             color: #ffffff;
-            background-color: #444444;
-            padding: 6px 12px;
-            border-radius: 5px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            white-space: nowrap; /* Evita quebra de linha no botão */
+            background-color: transparent;
+            border: none;
+            font-size: 14px;
         }
         .botao-acao:hover {
-            background-color: #666666;
+            text-decoration: underline;
+            cursor: pointer;
         }
     </style>
     """,
@@ -58,8 +59,8 @@ def dashboard_stocks():
         df = pd.DataFrame(stocks, columns=["ID", "Papel", "Empresa", "Preço", "Custava", "Yield", "Teto", "Setor", "Estratégia", "Obs"])
         df.drop(columns=["ID"], inplace=True)  # Removendo ID para exibição
         
-        # Criar botões clicáveis dentro da tabela
-        df["Papel"] = df["Papel"].apply(lambda x: f'<a href="?acao={x}" class="botao-acao">🔍 {x}</a>')
+        # Criar botões clicáveis dentro da tabela sem a lupa
+        df["Papel"] = df["Papel"].apply(lambda x: f'<a href="?acao={x}" class="botao-acao">{x}</a>')
         
         # Exibir tabela com barra de rolagem horizontal e sem quebras
         st.markdown('<div class="dataframe-container">', unsafe_allow_html=True)
