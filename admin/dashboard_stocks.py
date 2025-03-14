@@ -1,7 +1,30 @@
 import streamlit as st
 import pandas as pd
-import yfinance as yf
-from auth.database_stocks import get_stocks, add_stock, delete_stock
+from auth.database_stocks import get_stocks
+
+# Aplicar CSS para corrigir a quebra de linha
+st.markdown(
+    """
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+            white-space: nowrap; /* Evita quebras de linha */
+        }
+        th {
+            background-color: #333333;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #222222; /* Alternância de cor para facilitar leitura */
+        }
+    </style>
+    """,
+    unsafe_allow_html=True
 
 def dashboard_stocks():
     st.title("📊 Dashboard - Ações Monitoradas")
