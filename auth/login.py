@@ -15,7 +15,8 @@ def login():
         if st.button("Entrar"):
             if check_email_exists(email):
                 st.session_state["logged_in"] = True
-                st.session_state["user_email"] = email  # **Salva o e-mail do usuário na sessão**
+                st.session_state["user_email"] = email  # Salva o e-mail do usuário na sessão
+                st.experimental_set_query_params(user_email=email)  # Salva na URL para persistência
                 st.success(f"Bem-vindo, {email}!")
                 st.rerun()
             else:
