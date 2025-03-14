@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from auth.database_stocks import get_stocks, add_stock, delete_stock
 
-# Aplicar CSS para evitar quebras de linha e melhorar a visualização da tabela
+# Aplicar CSS para corrigir alinhamento e impedir quebras de linha
 st.markdown(
     """
     <style>
@@ -12,10 +12,10 @@ st.markdown(
         }
         th, td {
             padding: 10px;
-            text-align: left;
-            white-space: nowrap; /* Impede quebra de linha */
+            text-align: center;
+            white-space: nowrap;
             overflow: hidden;
-            text-overflow: ellipsis; /* Adiciona "..." se o texto for muito grande */
+            text-overflow: ellipsis;
         }
         th {
             background-color: #333333;
@@ -24,16 +24,18 @@ st.markdown(
         tr:nth-child(even) {
             background-color: #222222; /* Alternância de cor */
         }
-        a.botao-acao {
+        .botao-acao {
             text-decoration: none;
             font-weight: bold;
             color: #ffffff;
             background-color: #444444;
             padding: 6px 12px;
             border-radius: 5px;
-            display: inline-block;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        a.botao-acao:hover {
+        .botao-acao:hover {
             background-color: #666666;
         }
         .botao-adicionar {
