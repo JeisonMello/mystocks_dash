@@ -44,11 +44,12 @@ def dashboard_stocks():
         df = df.drop(columns=["ID"])  # Oculta a coluna ID
         df["Yield"] = df["Yield"].apply(lambda x: f"{x:.2f}%")  # Formatar Yield
 
-        # Criar um índice clicável para abrir detalhes
-        selected_ticker = st.session_state.get("selected_ticker", None)
+        # Aplicar cores alternadas nas linhas
+        def highlight_rows(row):
+            return ["background-color: #333333; color: white" if row.name % 2 == 0 else "background-color: #222222; color: white"] * len(row)
 
         # Exibir a tabela estilizada
-        st.dataframe(df.style.applymap(lambda x: "background-color: #333333; color: white" if df.index.get_loc(x) % 2 == 0 else "background-color: #222222; color: white"))
+        st.dataframe(df.style.apply(highlight_rows, axis=1))
 
         # Adicionar funcionalidade de clique
         for index, row in df.iterrows():
@@ -59,8 +60,8 @@ def dashboard_stocks():
                 st.rerun()
 
         # Exibir detalhes da ação clicada
-        if selected_ticker:
-            show_stock_details(selected_ticker, st.session_state["selected_empresa"], st.session_state["selected_preco"])
+        if "selected_ticker" in st.session_state:
+            show_stock_details(st.session_state["selected_ticker"], st.session_state["selected_empresa"], st.session_state["selected_preco"])
 
     else:
         st.warning("Nenhuma ação cadastrada ainda.")
