@@ -6,14 +6,17 @@ from auth.database_stocks import get_stocks, add_stock, delete_stock
 st.markdown(
     """
     <style>
+        .dataframe-container {
+            overflow-x: auto;  /* Adiciona barra de rolagem horizontal */
+            white-space: nowrap; /* Impede quebra de texto */
+        }
         table {
             width: 100%;
             border-collapse: collapse;
         }
         th, td {
-            padding: 10px;
+            padding: 12px;
             text-align: center;
-            white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
@@ -34,33 +37,10 @@ st.markdown(
             display: flex;
             align-items: center;
             justify-content: center;
+            white-space: nowrap; /* Evita quebra de linha no botão */
         }
         .botao-acao:hover {
             background-color: #666666;
-        }
-        .botao-adicionar {
-            background-color: #008000;
-            color: white;
-            padding: 8px 12px;
-            font-size: 16px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        .botao-adicionar:hover {
-            background-color: #006400;
-        }
-        .botao-excluir {
-            background-color: #800000;
-            color: white;
-            padding: 8px 12px;
-            font-size: 16px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        .botao-excluir:hover {
-            background-color: #600000;
         }
     </style>
     """,
@@ -81,8 +61,10 @@ def dashboard_stocks():
         # Criar botões clicáveis dentro da tabela
         df["Papel"] = df["Papel"].apply(lambda x: f'<a href="?acao={x}" class="botao-acao">🔍 {x}</a>')
         
-        # Exibir tabela com formatação correta
+        # Exibir tabela com barra de rolagem horizontal e sem quebras
+        st.markdown('<div class="dataframe-container">', unsafe_allow_html=True)
         st.markdown(df.to_html(escape=False, index=False), unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
     else:
         st.warning("Nenhuma ação cadastrada ainda.")
