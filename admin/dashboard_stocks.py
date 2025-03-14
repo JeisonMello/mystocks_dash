@@ -1,101 +1,30 @@
 import streamlit as st
 import pandas as pd
-import yfinance as yf
-from auth.database_stocks import add_stock, get_stocks, delete_stock, update_stock
 
 def dashboard_stocks():
-    # Título com fonte suave
-    st.markdown("<h1 style='font-size:34px; font-weight:400;'>Ações Monitoradas</h1>", unsafe_allow_html=True)
+    # Título sem negrito exagerado
+    st.markdown("<h2 style='font-weight: 500;'>Ações Monitoradas</h2>", unsafe_allow_html=True)
 
-    # Obtém as ações cadastradas
-    stocks = get_stocks()
-    if stocks:
-        # Criando DataFrame
-        df = pd.DataFrame(stocks, columns=["ID", "Papel", "Empresa", "Preço", "Custava", "Yield", "Teto", "Setor", "Estratégia", "Obs"])
-        df = df.drop(columns=["ID"])  # Remove a coluna de ID
-        
-        # Ajustando a formatação dos valores
-        df["Preço"] = df["Preço"].apply(lambda x: f"{x:.2f}")
-        df["Custava"] = df["Custava"].apply(lambda x: f"{x:.2f}")
-        df["Yield"] = df["Yield"].apply(lambda x: f"{x:.2f}%")
-        df["Teto"] = df["Teto"].apply(lambda x: f"{x:.2f}")
+    # Dados de exemplo (substituir pelos dados reais do banco)
+    stocks = [
+        ["ITSA4", "ITAUSA EJ", 8.84, 11.26, "9.08%", 11.20, "Industrials", "Dividends", "Teto $11.20"],
+        ["VALE3", "VALE", 53.76, 56.00, "8.74%", 71.00, "Basic Materials", "Dividends", ""],
+        ["BMGB4", "BANCO BMG", 3.73, 0.00, "12.65%", 0.00, "Financial Services", "Dividends", ""],
+        ["RECR11", "FII REC", 74.10, 107.36, "10.67%", 98.22, "FII", "FII", "Papel"]
+    ]
 
-        # Criando links para cada papel
-        df["Papel"] = df.apply(lambda row: f"<a href='?papel={row['Papel']}' target='_self' style='color: #1f77b4; text-decoration: none; font-weight: bold;'>{row['Papel']}</a>", axis=1)
+    df = pd.DataFrame(stocks, columns=["Papel", "Empresa", "Preço", "Custava", "Yield", "Teto", "Setor", "Estratégia", "Obs"])
 
-        # Aplicando estilo à tabela
-        st.markdown("""
-            <style>
-            table {
-                width: 100%;
-                border-collapse: collapse;
-                font-size: 16px;
-                text-align: left;
-            }
-            th {
-                background-color: #222222;
-                color: white;
-                padding: 10px;
-                border-bottom: 2px solid #444;
-            }
-            tr:nth-child(even) {
-                background-color: #333333;
-            }
-            tr:nth-child(odd) {
-                background-color: #222222;
-            }
-            td {
-                padding: 10px;
-                border-bottom: 1px solid #444;
-            }
-            a {
-                color: #1f77b4;
-                text-decoration: none;
-                font-weight: bold;
-            }
-            a:hover {
-                text-decoration: underline;
-            }
-            </style>
-        """, unsafe_allow_html=True)
+    # Aplicar estilos para evitar quebras de linha
+    def highlight_table():
+        return [
+            "white-space: nowrap; text-align: center; padding: 5px;"  # Evita quebras de linha
+        ] * len(df.columns)
 
-        # Exibindo a tabela formatada
-        st.markdown(df.to_html(escape=False, index=False), unsafe_allow_html=True)
+    # Aplicar estilos de cores alternadas nas linhas
+    def color_rows(row):
+        return [
+            "background-color: #2a2a2a; color: white;" if row.name % 2 == 0 else "background-color: #1f1f1f; color: white;"
+        ] * len(row)
 
-    else:
-        st.warning("Nenhuma ação cadastrada ainda.")
-
-    # Botão para adicionar ação
-    with st.expander("➕ Adicionar Nova Ação"):
-        st.subheader("Adicionar Nova Ação")
-        papel = st.text_input("Papel (ex: CSMG3)").upper()
-        
-        if papel:
-            stock_info = yf.Ticker(papel + ".SA").info
-            nome = stock_info.get("shortName", "Nome Desconhecido")
-            preco = stock_info.get("regularMarketPrice", 0.0)
-            yield_val = stock_info.get("trailingAnnualDividendYield", 0.0) * 100 if stock_info.get("trailingAnnualDividendYield") else 0.0
-            setor = stock_info.get("sector", "Setor Desconhecido")
-        else:
-            nome, preco, yield_val, setor = "", 0.0, 0.0, ""
-
-        custava = st.number_input("Custava", min_value=0.0, format="%.2f")
-        preco_teto = st.number_input("Preço Teto", min_value=0.0, format="%.2f")
-        estrategia = st.selectbox("Estratégia", ["Dividends", "Value Invest", "FII"])
-        obs = st.text_input("Observação")
-
-        if st.button("Adicionar Ação"):
-            if papel and nome and preco > 0:
-                add_stock(papel, nome, preco, custava, yield_val, preco_teto, setor, estrategia, obs)
-                st.success(f"Ação {papel} adicionada com sucesso!")
-                st.rerun()
-            else:
-                st.error("Papel inválido ou não encontrado na API.")
-
-    # Seção de remoção de ações
-    with st.expander("🗑️ Remover Ação"):
-        papel_excluir = st.text_input("Digite o código do papel para remover").upper()
-        if st.button("Excluir"):
-            delete_stock(papel_excluir)
-            st.warning(f"Ação {papel_excluir} removida!")
-            st.rerun()
+    st.table(df.style.apply(color_rows, axis=1).set_properties(**{'text-align': 'center'}).applymap(highlight_table))
