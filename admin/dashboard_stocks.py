@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-
 from auth.database_stocks import get_stocks, delete_stock, add_stock
 
 def dashboard_stocks():
@@ -10,21 +9,25 @@ def dashboard_stocks():
     stocks = get_stocks()
 
     if stocks:
-        df = pd.DataFrame(stocks, columns=["Papel", "Empresa", "Preço", "Custava", "Yield", "Teto", "Setor", "Estratégia", "Obs"])
+        # Criar DataFrame verificando a estrutura dos dados
+        df = pd.DataFrame(stocks, columns=["ID", "Papel", "Empresa", "Preço", "Custava", "Yield", "Teto", "Setor", "Estratégia", "Obs"])
         
-        # Aplicar formatação de colunas
-        df["Preço"] = df["Preço"].map(lambda x: f"R$ {x:.2f}")
-        df["Custava"] = df["Custava"].map(lambda x: f"R$ {x:.2f}")
-        df["Teto"] = df["Teto"].map(lambda x: f"R$ {x:.2f}")
-        df["Yield"] = df["Yield"].map(lambda x: f"{x:.2f}%")
+        # Remover a coluna "ID" que não precisa ser mostrada
+        df = df.drop(columns=["ID"])
 
-        # Estilização da tabela para manter exatamente como o modelo do Anexo 02
-        def apply_table_style(val):
-            return "white-space: nowrap; text-align: center;"
+        # Formatar colunas numéricas
+        df["Preço"] = df["Preço"].apply(lambda x: f"R$ {x:.2f}")
+        df["Custava"] = df["Custava"].apply(lambda x: f"R$ {x:.2f}")
+        df["Teto"] = df["Teto"].apply(lambda x: f"R$ {x:.2f}")
+        df["Yield"] = df["Yield"].apply(lambda x: f"{x:.2f}%")
 
-        styled_df = df.style.set_table_styles(
-            [{"selector": "th", "props": [("font-weight", "bold"), ("text-align", "center"), ("padding", "5px")]}]
-        ).applymap(apply_table_style)
+        # Aplicar estilos corretos para manter o layout igual ao do anexo 02
+        styled_df = df.style.set_properties(**{
+            "text-align": "center",
+            "white-space": "nowrap",
+        }).set_table_styles([
+            {"selector": "th", "props": [("font-weight", "bold"), ("text-align", "center"), ("padding", "5px")]}
+        ])
 
         st.dataframe(styled_df, use_container_width=True)
 
@@ -35,13 +38,14 @@ def dashboard_stocks():
     with st.expander("➕ Adicionar Nova Ação"):
         papel = st.text_input("Papel (ex: CSMG3)").upper()
         nome = st.text_input("Nome da Empresa")
+        preco = st.number_input("Preço Atual", format="%.2f")
         custava = st.number_input("Custava", format="%.2f")
         preco_teto = st.number_input("Preço Teto", format="%.2f")
         estrategia = st.selectbox("Estratégia", ["Dividends", "FII", "Value Invest"])
         obs = st.text_area("Observação")
 
         if st.button("Adicionar Ação"):
-            add_stock(papel, nome, custava, preco_teto, estrategia, obs)
+            add_stock(papel, nome, preco, custava, preco_teto, estrategia, obs)
             st.success(f"Ação {papel} adicionada com sucesso!")
             st.rerun()
 
