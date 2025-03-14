@@ -37,23 +37,28 @@ def dashboard_stocks():
     if stocks:
         df = pd.DataFrame(stocks, columns=["ID", "Papel", "Empresa", "Preço", "Custava", "Yield", "Teto", "Setor", "Estratégia", "Obs"])
         df = df.drop(columns=["ID"])  # **Ocultar a coluna de ID**
-        
+
         # Aplicando formatação correta
         df["Preço"] = df["Preço"].apply(lambda x: f"R$ {x:.2f}")
         df["Custava"] = df["Custava"].apply(lambda x: f"R$ {x:.2f}")
         df["Teto"] = df["Teto"].apply(lambda x: f"R$ {x:.2f}")
         df["Yield"] = df["Yield"].apply(lambda x: f"{x:.2f}%")
 
-        # **Aplicando Estilo (Remove o índice e aplica cores alternadas - cinza claro)**
+        # **Detectando o tema atual do Streamlit (claro ou escuro)**
+        theme = st.get_option("theme.base")  # Retorna "light" ou "dark"
+        bg_color = "#f5f5f5" if theme == "light" else "#333"  # Cinza claro no modo claro, cinza escuro no modo escuro
+        text_color = "#000" if theme == "light" else "#FFF"  # Preto no modo claro, branco no modo escuro
+
+        # **Aplicando Estilo com cores alternadas**
         def apply_row_style(index):
-            return 'background-color: #f5f5f5' if index % 2 == 1 else ''
+            return f'background-color: {bg_color}; color: {text_color}' if index % 2 == 1 else ''
 
         styled_df = df.style.apply(lambda row: [apply_row_style(row.name)] * len(row), axis=1).set_table_styles([
             {'selector': 'thead th', 'props': [('background-color', '#222'), ('color', 'white'), ('font-weight', 'bold'), ('text-align', 'center')]},
             {'selector': 'td', 'props': [('padding', '10px'), ('text-align', 'center')]}  # Melhor espaçamento e alinhamento
         ])
 
-        st.write(styled_df, unsafe_allow_html=True)  # **Esconder o índice da tabela**
+        st.write(styled_df, unsafe_allow_html=True)  # **Renderiza a tabela com estilo**
         
     else:
         st.warning("Nenhuma ação cadastrada ainda.")
