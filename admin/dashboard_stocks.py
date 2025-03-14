@@ -44,11 +44,12 @@ def dashboard_stocks():
         df["Teto"] = df["Teto"].apply(lambda x: f"R$ {x:.2f}")
         df["Yield"] = df["Yield"].apply(lambda x: f"{x:.2f}%")
 
-        # **Aplicando Estilo (Remove o índice e aplica cores alternadas)**
-        styled_df = df.style.set_properties(**{'text-align': 'center'}).set_table_styles([
+        # **Aplicando Estilo (Remove o índice e aplica cores alternadas - cinza claro)**
+        def apply_row_style(index):
+            return 'background-color: #f5f5f5' if index % 2 == 1 else ''
+
+        styled_df = df.style.apply(lambda row: [apply_row_style(row.name)] * len(row), axis=1).set_table_styles([
             {'selector': 'thead th', 'props': [('background-color', '#222'), ('color', 'white'), ('font-weight', 'bold'), ('text-align', 'center')]},
-            {'selector': 'tbody tr:nth-child(even)', 'props': [('background-color', '#333')]},  # Linhas pares mais escuras
-            {'selector': 'tbody tr:nth-child(odd)', 'props': [('background-color', '#444')]},   # Linhas ímpares mais claras
             {'selector': 'td', 'props': [('padding', '10px'), ('text-align', 'center')]}  # Melhor espaçamento e alinhamento
         ])
 
