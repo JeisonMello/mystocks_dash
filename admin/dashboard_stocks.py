@@ -8,24 +8,29 @@ def dashboard_stocks():
 
     # Buscar ações cadastradas no banco
     stocks = get_stocks()
+    
     if stocks:
-        df = pd.DataFrame(stocks, columns=["Papel", "Empresa", "Preço", "Custava", "Yield", "Teto", "Setor", "Estratégia", "Obs"])
+        # Garantir que os dados do banco tenham o mesmo número de colunas da tabela
+        colunas = ["ID", "Papel", "Empresa", "Preço", "Custava", "Yield", "Teto", "Setor", "Estratégia", "Obs"]
+        df = pd.DataFrame(stocks, columns=colunas)
 
-        # Criar botões clicáveis para acessar o histórico de preços
-        df["Papel"] = df["Papel"].apply(lambda x: f'<a href="#" onclick="window.location.search=\'?acao={x}\'" style="text-decoration: none; color: #1E88E5; font-weight: 600;">{x}</a>')
+        # Remover a coluna ID (não é necessária na exibição)
+        df.drop(columns=["ID"], inplace=True)
 
-        # Formatar números
+        # Criar botões clicáveis na coluna "Papel"
+        df["Papel"] = df.apply(lambda row: f'<a href="#" onclick="window.location.search=\'?acao={row["Papel"]}\'" style="text-decoration: none; color: #1E88E5; font-weight: 600;">{row["Papel"]}</a>', axis=1)
+
+        # Formatar números (duas casas decimais)
         df["Preço"] = df["Preço"].apply(lambda x: f"R$ {x:.2f}")
         df["Custava"] = df["Custava"].apply(lambda x: f"R$ {x:.2f}")
         df["Teto"] = df["Teto"].apply(lambda x: f"R$ {x:.2f}")
         df["Yield"] = df["Yield"].apply(lambda x: f"{x:.2f}%")
 
-        # Exibir tabela
+        # Exibir tabela corretamente formatada no Streamlit
         st.markdown(
             df.to_html(escape=False, index=False),
             unsafe_allow_html=True
         )
-
     else:
         st.warning("Nenhuma ação cadastrada.")
 
@@ -40,15 +45,18 @@ def dashboard_stocks():
 
         if st.button("Adicionar Ação"):
             if papel:
-                stock_info = yf.Ticker(papel + ".SA").info
-                nome = stock_info.get("shortName", papel)
-                preco = stock_info.get("regularMarketPrice", 0.0)
-                setor = stock_info.get("sector", "Desconhecido")
-                yield_val = stock_info.get("trailingAnnualDividendYield", 0.0) * 100 if stock_info.get("trailingAnnualDividendYield") else 0.0
+                try:
+                    stock_info = yf.Ticker(papel + ".SA").info
+                    nome = stock_info.get("shortName", papel)
+                    preco = stock_info.get("regularMarketPrice", 0.0)
+                    setor = stock_info.get("sector", "Desconhecido")
+                    yield_val = stock_info.get("trailingAnnualDividendYield", 0.0) * 100 if stock_info.get("trailingAnnualDividendYield") else 0.0
 
-                add_stock(papel, nome, preco, custava, yield_val, preco_teto, setor, estrategia, obs)
-                st.success(f"Ação {papel} adicionada com sucesso!")
-                st.rerun()
+                    add_stock(papel, nome, preco, custava, yield_val, preco_teto, setor, estrategia, obs)
+                    st.success(f"Ação {papel} adicionada com sucesso!")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Erro ao buscar dados da ação: {e}")
             else:
                 st.error("Digite um código de ação válido.")
 
