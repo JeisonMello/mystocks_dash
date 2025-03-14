@@ -44,13 +44,15 @@ def dashboard_stocks():
         df["Teto"] = df["Teto"].apply(lambda x: f"R$ {x:.2f}")
         df["Yield"] = df["Yield"].apply(lambda x: f"{x:.2f}%")
 
-        # **Tabela com Estilo (Oculta índices e aplica cor alternada)**
-        st.write(df.style.set_properties(**{'text-align': 'center'}).set_table_styles([
+        # **Aplicando Estilo (Remove o índice e aplica cores alternadas)**
+        styled_df = df.style.set_properties(**{'text-align': 'center'}).set_table_styles([
             {'selector': 'thead th', 'props': [('background-color', '#222'), ('color', 'white'), ('font-weight', 'bold'), ('text-align', 'center')]},
-            {'selector': 'tbody tr:nth-child(even)', 'props': [('background-color', '#333')]},  # Linhas pares com tom escuro
-            {'selector': 'tbody tr:nth-child(odd)', 'props': [('background-color', '#444')]},   # Linhas ímpares com tom mais claro
-            {'selector': 'td', 'props': [('padding', '10px'), ('text-align', 'center')]}  # Melhor espaçamento e centralização
-        ]), hide_index=True)  # **Remove os números da tabela**
+            {'selector': 'tbody tr:nth-child(even)', 'props': [('background-color', '#333')]},  # Linhas pares mais escuras
+            {'selector': 'tbody tr:nth-child(odd)', 'props': [('background-color', '#444')]},   # Linhas ímpares mais claras
+            {'selector': 'td', 'props': [('padding', '10px'), ('text-align', 'center')]}  # Melhor espaçamento e alinhamento
+        ])
+
+        st.write(styled_df, unsafe_allow_html=True)  # **Esconder o índice da tabela**
         
     else:
         st.warning("Nenhuma ação cadastrada ainda.")
