@@ -5,12 +5,11 @@ from admin.dashboard import admin_dashboard
 
 # Função para salvar login nos parâmetros da URL
 def save_login_state(email):
-    st.experimental_set_query_params(user_email=email)
+    st.query_params["user_email"] = email
 
 # Função para carregar login da URL, se disponível
 def load_login_state():
-    query_params = st.experimental_get_query_params()
-    return query_params.get("user_email", [None])[0]
+    return st.query_params.get("user_email", None)
 
 # Se o estado de login não estiver definido, carregamos dos parâmetros
 if "logged_in" not in st.session_state:
@@ -32,7 +31,7 @@ else:
     if st.sidebar.button("🚪 Sair"):
         st.session_state["logged_in"] = False
         st.session_state["user_email"] = None
-        st.experimental_set_query_params()  # Limpa os parâmetros de login da URL
+        st.query_params.clear()  # Limpa os parâmetros de login da URL
         st.rerun()
 
     # Define as opções disponíveis para navegação
