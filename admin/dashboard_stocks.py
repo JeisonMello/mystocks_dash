@@ -4,25 +4,62 @@ import yfinance as yf
 from auth.database_stocks import add_stock, get_stocks, delete_stock, update_stock
 
 def dashboard_stocks():
-    st.markdown("<h1 style='font-size:36px; font-weight:400;'>Ações Monitoradas</h1>", unsafe_allow_html=True)
+    # Título com fonte suave
+    st.markdown("<h1 style='font-size:34px; font-weight:400;'>Ações Monitoradas</h1>", unsafe_allow_html=True)
 
     # Obtém as ações cadastradas
     stocks = get_stocks()
     if stocks:
         # Criando DataFrame
         df = pd.DataFrame(stocks, columns=["ID", "Papel", "Empresa", "Preço", "Custava", "Yield", "Teto", "Setor", "Estratégia", "Obs"])
-        df = df.drop(columns=["ID"])  # Oculta o ID
+        df = df.drop(columns=["ID"])  # Remove a coluna de ID
         
-        # Ajusta a formatação dos valores
-        df["Preço"] = df["Preço"].apply(lambda x: f"R$ {x:.2f}")
-        df["Custava"] = df["Custava"].apply(lambda x: f"R$ {x:.2f}")
+        # Ajustando a formatação dos valores
+        df["Preço"] = df["Preço"].apply(lambda x: f"{x:.2f}")
+        df["Custava"] = df["Custava"].apply(lambda x: f"{x:.2f}")
         df["Yield"] = df["Yield"].apply(lambda x: f"{x:.2f}%")
-        df["Teto"] = df["Teto"].apply(lambda x: f"R$ {x:.2f}")
-        
-        # Cria os links dos papéis para abrir o dashboard individual
-        df["Papel"] = df.apply(lambda row: f"<a href='?papel={row['Papel']}' target='_self' style='color: #1f77b4; text-decoration: none;'>{row['Papel']}</a>", axis=1)
+        df["Teto"] = df["Teto"].apply(lambda x: f"{x:.2f}")
 
-        # Exibe a tabela formatada com rolagem horizontal para evitar quebras
+        # Criando links para cada papel
+        df["Papel"] = df.apply(lambda row: f"<a href='?papel={row['Papel']}' target='_self' style='color: #1f77b4; text-decoration: none; font-weight: bold;'>{row['Papel']}</a>", axis=1)
+
+        # Aplicando estilo à tabela
+        st.markdown("""
+            <style>
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 16px;
+                text-align: left;
+            }
+            th {
+                background-color: #222222;
+                color: white;
+                padding: 10px;
+                border-bottom: 2px solid #444;
+            }
+            tr:nth-child(even) {
+                background-color: #333333;
+            }
+            tr:nth-child(odd) {
+                background-color: #222222;
+            }
+            td {
+                padding: 10px;
+                border-bottom: 1px solid #444;
+            }
+            a {
+                color: #1f77b4;
+                text-decoration: none;
+                font-weight: bold;
+            }
+            a:hover {
+                text-decoration: underline;
+            }
+            </style>
+        """, unsafe_allow_html=True)
+
+        # Exibindo a tabela formatada
         st.markdown(df.to_html(escape=False, index=False), unsafe_allow_html=True)
 
     else:
