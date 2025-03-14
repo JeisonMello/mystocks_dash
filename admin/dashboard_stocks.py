@@ -6,30 +6,23 @@ from auth.database_stocks import add_stock, get_stocks, delete_stock, update_sto
 def get_stock_data(papel):
     """Busca os dados da ação na API do Yahoo Finance e formata corretamente."""
     try:
-        papel_formatado = papel + ".SA"  # Yahoo Finance usa ".SA" para ações brasileiras
+        papel_formatado = papel + ".SA"
         stock = yf.Ticker(papel_formatado)
         info = stock.info
 
-        # Obtendo os valores de dividend yield
+        # Obtendo o Yield correto
         trailing_yield = info.get("trailingAnnualDividendYield", 0) or 0
         forward_yield = info.get("dividendYield", 0) or 0
-
-        # Escolher o maior valor
         best_yield = max(trailing_yield, forward_yield)
+        best_yield = round(best_yield * 100, 2) if best_yield <= 1 else round(best_yield, 2)
 
-        # **Correção**: Se o yield for maior que 1, ele já está em percentual e não deve ser multiplicado
-        if best_yield > 1:
-            best_yield = round(best_yield, 2)  # Apenas arredondar, sem multiplicação
-        else:
-            best_yield = round(best_yield * 100, 2)  # Multiplicar por 100 para percentual
-
-        # Remover sufixos como ON, PN, etc.
+        # Limpar o nome da empresa, removendo ON, PN, etc.
         nome_limpo = " ".join(info.get("shortName", "Nome Desconhecido").split()[:2])
 
         return {
             "nome": nome_limpo,
             "preco": round(info.get("regularMarketPrice", 0.0), 2),
-            "yield": best_yield,  # Agora sempre correto
+            "yield": best_yield,
             "setor": info.get("sector", "Setor Desconhecido")
         }
     except Exception as e:
@@ -39,23 +32,26 @@ def get_stock_data(papel):
 def dashboard_stocks():
     st.title("📊 Dashboard - Ações Monitoradas")
 
-    # Exibir tabela de ações cadastradas de forma visualmente agradável
+    # Buscar ações cadastradas
     stocks = get_stocks()
     if stocks:
-        df = pd.DataFrame(stocks, columns=["ID", "Papel", "Nome", "Preço", "Custava", "Yield", "Teto", "Setor", "Estratégia", "Obs"])
-        df = df.drop(columns=["ID"])  # Oculta a coluna ID
-
-        # Aplicando formatação
+        df = pd.DataFrame(stocks, columns=["ID", "Papel", "Empresa", "Preço", "Custava", "Yield", "Teto", "Setor", "Estratégia", "Obs"])
+        df = df.drop(columns=["ID"])  # **Ocultar a coluna de ID**
+        
+        # Aplicando formatação correta
         df["Preço"] = df["Preço"].apply(lambda x: f"R$ {x:.2f}")
         df["Custava"] = df["Custava"].apply(lambda x: f"R$ {x:.2f}")
         df["Teto"] = df["Teto"].apply(lambda x: f"R$ {x:.2f}")
-        df["Yield"] = df["Yield"].apply(lambda x: f"{x:.2f}%")  # Agora correto
+        df["Yield"] = df["Yield"].apply(lambda x: f"{x:.2f}%")
 
-        # Exibir com estilo zebrado
-        st.write(df.style.set_properties(**{'text-align': 'center'}).set_table_styles(
-            [{'selector': 'thead th', 'props': [('background-color', '#333'), ('color', 'white'), ('font-weight', 'bold')]},
-             {'selector': 'tbody tr:nth-child(even)', 'props': [('background-color', '#222')]}]
-        ))
+        # **Tabela com Estilo (Oculta índices e aplica cor alternada)**
+        st.write(df.style.set_properties(**{'text-align': 'center'}).set_table_styles([
+            {'selector': 'thead th', 'props': [('background-color', '#222'), ('color', 'white'), ('font-weight', 'bold'), ('text-align', 'center')]},
+            {'selector': 'tbody tr:nth-child(even)', 'props': [('background-color', '#333')]},  # Linhas pares com tom escuro
+            {'selector': 'tbody tr:nth-child(odd)', 'props': [('background-color', '#444')]},   # Linhas ímpares com tom mais claro
+            {'selector': 'td', 'props': [('padding', '10px'), ('text-align', 'center')]}  # Melhor espaçamento e centralização
+        ]), hide_index=True)  # **Remove os números da tabela**
+        
     else:
         st.warning("Nenhuma ação cadastrada ainda.")
 
@@ -75,10 +71,7 @@ def dashboard_stocks():
 
         custava = st.number_input("Custava", min_value=0.0, format="%.2f")
         preco_teto = st.number_input("Preço Teto", min_value=0.0, format="%.2f")
-        
-        # **Adicionando "FII" no campo de Estratégia**
-        estrategia = st.selectbox("Estratégia", ["Dividends", "Value Invest", "FII"])  
-        
+        estrategia = st.selectbox("Estratégia", ["Dividends", "Value Invest", "FII"])
         obs = st.text_input("Observação")
 
         if st.button("Adicionar Ação"):
