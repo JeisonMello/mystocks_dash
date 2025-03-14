@@ -44,9 +44,11 @@ def dashboard_stocks():
     st.title("📊 Dashboard - Ações Monitoradas")
 
     stocks = get_stocks()
+    
     if stocks:
-        # Criar DataFrame para exibição
-        df = pd.DataFrame(stocks, columns=["Papel", "Empresa", "Preço", "Custava", "Yield", "Teto", "Setor", "Estratégia", "Obs"])
+        # Certifique-se de que os dados retornados têm o formato correto
+        df = pd.DataFrame(stocks, columns=["ID", "Papel", "Empresa", "Preço", "Custava", "Yield", "Teto", "Setor", "Estratégia", "Obs"])
+        df.drop(columns=["ID"], inplace=True)  # Removendo ID, pois não é necessário exibir
 
         # Criar botões clicáveis para abrir detalhes da ação
         df["Papel"] = df["Papel"].apply(lambda x: f'<a href="?acao={x}" class="botao-acao">🔍 {x}</a>')
