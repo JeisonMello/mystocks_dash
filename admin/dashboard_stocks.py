@@ -21,11 +21,18 @@ def dashboard_stocks():
         df["Teto"] = df["Teto"].apply(lambda x: f"R$ {x:.2f}")
         df["Yield"] = df["Yield"].apply(lambda x: f"{x:.2f}%")
 
-        # Criar botões interativos dentro da tabela para cada papel
-        df["Papel"] = df["Papel"].apply(lambda papel: f'<button onclick="window.location.href=\'?stock={papel}\'" style="border:none; background:none; color:white; text-decoration:underline; font-size:16px; cursor:pointer;">🔍 {papel}</button>')
+        # Criar botões interativos dentro da tabela para cada papel (HTML + JS)
+        df["Papel"] = df["Papel"].apply(lambda papel: f'''
+            <a href="?stock={papel}" style="text-decoration:none; color:white; font-weight:bold; display:flex; align-items:center;">
+                <span style="margin-right:5px;">🔍</span> {papel}
+            </a>
+        ''')
 
-        # Exibir a tabela com formatação correta e cores alternadas para melhor visualização
-        st.markdown(df.to_html(escape=False, index=False), unsafe_allow_html=True)
+        # Exibir a tabela formatada corretamente sem quebras de linha
+        st.markdown(
+            df.to_html(escape=False, index=False, justify='center', border=0),
+            unsafe_allow_html=True
+        )
 
     else:
         st.warning("Nenhuma ação cadastrada ainda.")
