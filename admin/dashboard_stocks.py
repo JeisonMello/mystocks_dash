@@ -15,22 +15,22 @@ def dashboard_stocks():
         df = pd.DataFrame(stocks, columns=["ID", "Papel", "Empresa", "Preço", "Custava", "Yield", "Teto", "Setor", "Estratégia", "Obs"])
         df = df.drop(columns=["ID"])  # Remover a coluna ID
 
-        # Aplicar duas casas decimais a valores numéricos
+        # Aplicar formatação de valores numéricos com 2 casas decimais
         df["Preço"] = df["Preço"].apply(lambda x: f"R$ {x:.2f}")
         df["Custava"] = df["Custava"].apply(lambda x: f"R$ {x:.2f}")
         df["Teto"] = df["Teto"].apply(lambda x: f"R$ {x:.2f}")
         df["Yield"] = df["Yield"].apply(lambda x: f"{x:.2f}%")
 
-        # Criar botões interativos dentro da tabela para cada papel (HTML + JS)
+        # Criar links com botão interativo dentro da célula da coluna "Papel"
         df["Papel"] = df["Papel"].apply(lambda papel: f'''
-            <a href="?stock={papel}" style="text-decoration:none; color:white; font-weight:bold; display:flex; align-items:center;">
-                <span style="margin-right:5px;">🔍</span> {papel}
+            <a href="?stock={papel}" style="text-decoration:none; color:white; font-weight:bold; display:inline-flex; align-items:center; gap:5px;">
+                <span>🔍</span> <span>{papel}</span>
             </a>
         ''')
 
-        # Exibir a tabela formatada corretamente sem quebras de linha
+        # Exibir a tabela formatada corretamente
         st.markdown(
-            df.to_html(escape=False, index=False, justify='center', border=0),
+            df.to_html(escape=False, index=False, justify='center', border=0).replace("\\n", ""),
             unsafe_allow_html=True
         )
 
