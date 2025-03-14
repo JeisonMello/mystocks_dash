@@ -13,7 +13,6 @@ def plot_stock_chart(ticker, period="6mo"):
         st.warning("Nenhum dado disponível para este período.")
         return
 
-    # Criando o gráfico de linha
     fig = go.Figure()
 
     fig.add_trace(go.Scatter(
@@ -43,17 +42,23 @@ def dashboard_stocks():
     if stocks:
         df = pd.DataFrame(stocks, columns=["ID", "Papel", "Empresa", "Preço", "Custava", "Yield", "Teto", "Setor", "Estratégia", "Obs"])
         df = df.drop(columns=["ID"])  # Oculta a coluna ID
+        df["Yield"] = df["Yield"].apply(lambda x: f"{x:.2f}%")  # Formatar Yield
 
-        # Criar uma tabela clicável
+        # Criar um índice clicável para abrir detalhes
         selected_ticker = st.session_state.get("selected_ticker", None)
 
+        # Exibir a tabela estilizada
+        st.dataframe(df.style.applymap(lambda x: "background-color: #333333; color: white" if df.index.get_loc(x) % 2 == 0 else "background-color: #222222; color: white"))
+
+        # Adicionar funcionalidade de clique
         for index, row in df.iterrows():
-            if st.button(f"{row['Papel']} - {row['Empresa']}", key=f"btn_{row['Papel']}"):
+            if st.button(f"🔍 {row['Papel']}", key=f"btn_{row['Papel']}"):
                 st.session_state["selected_ticker"] = row['Papel']
                 st.session_state["selected_empresa"] = row['Empresa']
                 st.session_state["selected_preco"] = row['Preço']
                 st.rerun()
 
+        # Exibir detalhes da ação clicada
         if selected_ticker:
             show_stock_details(selected_ticker, st.session_state["selected_empresa"], st.session_state["selected_preco"])
 
