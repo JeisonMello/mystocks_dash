@@ -13,16 +13,18 @@ st.markdown(
         th, td {
             padding: 10px;
             text-align: left;
-            white-space: nowrap; /* Evita quebra de linha */
+            white-space: nowrap; /* Impede quebra de linha */
+            overflow: hidden;
+            text-overflow: ellipsis; /* Adiciona "..." se o texto for muito grande */
         }
         th {
             background-color: #333333;
             color: white;
         }
         tr:nth-child(even) {
-            background-color: #222222; /* Alternância de cor para facilitar leitura */
+            background-color: #222222; /* Alternância de cor */
         }
-        .botao-acao {
+        a.botao-acao {
             text-decoration: none;
             font-weight: bold;
             color: #ffffff;
@@ -31,7 +33,7 @@ st.markdown(
             border-radius: 5px;
             display: inline-block;
         }
-        .botao-acao:hover {
+        a.botao-acao:hover {
             background-color: #666666;
         }
         .botao-adicionar {
